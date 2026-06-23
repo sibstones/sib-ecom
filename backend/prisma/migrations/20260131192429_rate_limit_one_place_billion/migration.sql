@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "api_keys" ALTER COLUMN "rateLimit" SET DEFAULT 1000000000;
+
+-- AlterTable
+ALTER TABLE "gpt_assistant_settings" ALTER COLUMN "rateLimitAdmin" SET DEFAULT 1000000000,
+ALTER COLUMN "rateLimitCustomer" SET DEFAULT 1000000000,
+ALTER COLUMN "rateLimitGuest" SET DEFAULT 1000000000;

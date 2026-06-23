@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Global colors - managed through admin panel */
+    --color-white: #ffffff;
+    --color-dark: #e8e5e5;
+    --color-dark-light: #f5f5f5;
+    --color-dark-lighter: #e5e5e5;
+    --color-accent: #1c1b1b;
+    --color-accent-muted: #666666;
+    --color-accent-light: #ded9d9;
+    --color-background: #ffffff;
+    --color-background-secondary: #f9f9f9;
+    --color-black: #000000;
+
+    /* Typography settings - managed through admin panel */
+    --font-family: Inter, Helvetica, Arial, sans-serif;
+    --font-size-h1: 3rem;
+    --font-size-h2: 2.25rem;
+    --font-size-h3: 1.875rem;
+    --font-size-h4: 1.5rem;
+    --font-size-body: 1rem;
+    --font-size-small: 0.875rem;
+    --font-size-button: 1rem;
+    --text-transform: none;
+
+    /* Border Radius settings - managed through admin panel */
+    --border-radius-card: 0.5rem;
+    --border-radius-button: 0.5rem;
+  }
+
+  html {
+    min-height: 100vh;
+    @apply bg-background;
+  }
+
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-background text-dark antialiased;
+    font-family: var(--font-family);
+    font-size: var(--font-size-body);
+    text-transform: var(--text-transform);
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: var(--font-size-h1);
+    text-transform: var(--text-transform);
+  }
+
+  h2 {
+    font-size: var(--font-size-h2);
+    text-transform: var(--text-transform);
+  }
+
+  h3 {
+    font-size: var(--font-size-h3);
+    text-transform: var(--text-transform);
+  }
+
+  h4 {
+    font-size: var(--font-size-h4);
+    text-transform: var(--text-transform);
+  }
+
+  small {
+    font-size: var(--font-size-small);
+    text-transform: var(--text-transform);
+  }
+
+  button {
+    font-size: var(--font-size-button);
+    text-transform: var(--text-transform);
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Product size chips — width follows label (e.g. 15×11 cm); overrides grid/flex shrink */
+  .product-size-options {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .product-size-options > button.product-size-option,
+  button.product-size-option {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box !important;
+    width: fit-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    text-transform: none !important;
+    overflow: visible !important;
+  }
+
+  .product-size-option__label {
+    display: block;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+
+  /* Tab buttons (underline style, e.g. border-b-2) - no border-radius */
+  button[class*='border-b-'] {
+    border-radius: 0;
+  }
+
+  /* Button-like links (CTA: ADD PRODUCTS, START SHOPPING, SHOP NOW, etc.) */
+  a[class*='bg-accent'],
+  a[class*='bg-black'][class*='py-'] {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Bordered/outline link buttons (e.g. category filters: SWEATSHIRT) */
+  a[class*='border'][class*='py-'] {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Tab-style links (underline, e.g. nav category tabs: CLOTHING) — no border-radius */
+  a[class*='border-b-'] {
+    border-radius: 0;
+  }
+
+  /* Label chips / filter toggles (e.g. ACTIVE) - no border-radius */
+  label[class*='border'][class*='py-'] {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Badges / pills (e.g. DEFAULT tag) - no border-radius */
+  span[class*='bg-accent'].inline-block,
+  span.inline-block[class*='bg-accent'] {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Form controls: select, text/number inputs - no border-radius */
+  select {
+    border-radius: var(--border-radius-button);
+  }
+  input:not([type='checkbox']):not([type='radio']) {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Apply border radius to common card elements - no border-radius */
+  [class*="card"],
+  [class*="Card"],
+  .bg-dark-light,
+  .bg-white[class*="rounded"],
+  [class*="product-card"],
+  [class*="ProductCard"],
+  /* Dashboard / stat cards (bg-white + border + shadow) - no border-radius */
+  .bg-white[class*="border"][class*="shadow"],
+  /* Option cards (border-2, border-accent — e.g. layout choice MAGAZINE) */
+  [class*="border-2"][class*="border-accent"],
+  [class*="border-accent"][class*="border-2"] {
+    border-radius: var(--border-radius-card);
+  }
+
+  /* Chat modal: no border-radius (header and content stay square) */
+  #desktop-chat-modal,
+  #desktop-chat-modal * {
+    border-radius: 0;
+  }
+
+  /* Sidebar menu (filter panel): no border-radius on the box itself */
+  aside.sidebar-mobile[class*='shadow'] {
+    border-radius: 0;
+  }
+
+  /* Shipping modal (Add Shipping Information) — uses global radius tokens */
+  .shipping-modal-overlay {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+  }
+  .shipping-modal-panel {
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .shipping-modal-card {
+    border-radius: var(--border-radius-card);
+  }
+  .shipping-modal-btn-primary {
+    border-radius: var(--border-radius-button);
+  }
+  .shipping-modal-btn-secondary {
+    border-radius: var(--border-radius-button);
+  }
+
+  /* Admin Reports: cards and buttons follow global border-radius */
+  .admin-reports .report-card,
+  .admin-reports .report-details-card {
+    border-radius: var(--border-radius-card);
+  }
+  .admin-reports .report-btn,
+  .admin-reports .report-btn-secondary,
+  .admin-reports .report-input,
+  .admin-reports select.report-input {
+    border-radius: var(--border-radius-button);
+  }
+  .admin-reports .report-row {
+    border-radius: var(--border-radius-card);
+  }
+
+  /* Unified height for all form elements with py-2 */
+  /* Use selectors that work regardless of class order */
+  input[class*='px-4'][class*='py-2']:not(textarea),
+  select[class*='px-4'][class*='py-2'] {
+    height: 2.5rem;
+    box-sizing: border-box;
+    line-height: 1.5;
+  }
+
+  /* Unified height for elements with py-3 */
+  input[class*='px-4'][class*='py-3']:not(textarea),
+  select[class*='px-4'][class*='py-3'] {
+    height: 3rem;
+    box-sizing: border-box;
+    line-height: 1.5;
+  }
+
+  /* Remove default browser styles for select and add custom arrow */
+  /* Apply to all select elements for uniformity */
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23000000' d='M4 6L1 3h6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.5rem;
+    cursor: pointer;
+  }
+
+  /* For select with px-4, keep larger right padding */
+  select[class*='px-4'] {
+    padding-right: 2.5rem;
+  }
+
+  /* For other select, use smaller padding */
+  select:not([class*='px-4']) {
+    padding-right: 1.75rem;
+  }
+
+  /* For textarea, don't fix height, only min-height */
+  textarea[class*='px-4'][class*='py-2'] {
+    min-height: 2.5rem;
+    height: auto;
+    box-sizing: border-box;
+  }
+
+  textarea[class*='px-4'][class*='py-3'] {
+    min-height: 3rem;
+    height: auto;
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .container-custom {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+    max-width: 120rem;
+  }
+}

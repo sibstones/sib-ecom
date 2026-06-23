@@ -1,0 +1,14 @@
+{
+  "admin.sessionExpiredTitle": "管理员会话已过期",
+  "admin.sessionExpiredMessage": "您的管理员会话已过期，请重新登录。",
+  "paymentGateway.wechatLink": "微信链接",
+  "paymentGateway.maxLink": "MAX 链接",
+  "paymentGateway.wechatMerchantCertificate": "商户证书（PEM，可选）",
+  "orderDetail.contactManagerWechat": "通过微信联系经理",
+  "orderDetail.contactManagerMax": "通过 MAX 联系经理",
+  "checkout.placeOrderWithWechat": "下单并打开微信",
+  "checkout.placeOrderWithMax": "下单并打开 MAX",
+  "homepage.viewAllBlog": "查看全部文章",
+  "homepage.noBlogPosts": "暂无文章",
+  "homepage.blogSection": "博客"
+}

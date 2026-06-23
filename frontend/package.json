@@ -1,0 +1,40 @@
+{
+  "name": "fashion-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite dev",
+    "build": "svelte-kit sync && vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"css-unused-selector:ignore,a11y-label-has-associated-control:ignore,a11y-no-noninteractive-element-interactions:ignore,a11y-click-events-have-key-events:ignore,a11y-no-static-element-interactions:ignore,unused-export-let:ignore,a11y-missing-content:ignore,a11y-no-noninteractive-element-to-interactive-role:ignore,a11y-invalid-attribute:ignore,a11y-autofocus:ignore,vendorPrefix:ignore,empty-block:ignore\"",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch --compiler-warnings \"css-unused-selector:ignore,a11y-label-has-associated-control:ignore,a11y-no-noninteractive-element-interactions:ignore,a11y-click-events-have-key-events:ignore,a11y-no-static-element-interactions:ignore,unused-export-let:ignore,a11y-missing-content:ignore,a11y-no-noninteractive-element-to-interactive-role:ignore,a11y-invalid-attribute:ignore,a11y-autofocus:ignore,vendorPrefix:ignore,empty-block:ignore\"",
+    "lint": "prettier --check . && eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/adapter-static": "^3.0.0",
+    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-svelte": "^2.35.1",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.1",
+    "prettier-plugin-svelte": "^3.1.2",
+    "svelte": "^5.55.4",
+    "svelte-check": "^3.6.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^6.4.2"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.10",
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4"
+  },
+  "type": "module"
+}

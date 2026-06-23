@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/rag-prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("RAG_DATABASE_URL")
+}
+
+enum KnowledgeDocumentAudience {
+  admin_only
+  customer_only
+  public
+  internal
+}
+
+enum KnowledgeDocumentStatus {
+  draft
+  processing
+  indexed
+  failed
+  archived
+}
+
+enum KnowledgeDocumentSourceType {
+  text
+  markdown
+  txt
+  pdf
+  url
+  manual
+}
+
+enum KnowledgeIngestionJobStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+model KnowledgeDocument {
+  id               String                     @id @default(cuid())
+  externalId       String?                    @unique
+  title            String
+  slug             String?                    @unique
+  locale           String                     @default("ru")
+  audience         KnowledgeDocumentAudience  @default(public)
+  status           KnowledgeDocumentStatus    @default(draft)
+  sourceType       KnowledgeDocumentSourceType @default(text)
+  sourcePath       String?
+  mimeType         String?
+  checksum         String?
+  tags             String[]
+  metadata         Json?
+  rawText          String?
+  normalizedText   String?
+  chunkCount       Int                        @default(0)
+  embeddingModel   String?
+  lastIndexedAt    DateTime?
+  createdByAdminId String?
+  updatedByAdminId String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  chunks           KnowledgeChunk[]
+  ingestionJobs    KnowledgeIngestionJob[]
+
+  @@index([status, audience])
+  @@index([locale, audience])
+  @@index([lastIndexedAt])
+}
+
+model KnowledgeChunk {
+  id               String            @id @default(cuid())
+  documentId       String
+  chunkIndex       Int
+  locale           String            @default("ru")
+  audience         KnowledgeDocumentAudience
+  content          String
+  contentNormalized String?
+  tokenCount       Int?
+  embeddingModel   String?
+  embedding        Unsupported("vector(3072)")?
+  searchVector     Unsupported("tsvector")?
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  document         KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([locale, audience])
+}
+
+model KnowledgeIngestionJob {
+  id               String                    @id @default(cuid())
+  documentId       String
+  status           KnowledgeIngestionJobStatus @default(pending)
+  stage            String?
+  provider         String?
+  model            String?
+  attempts         Int                       @default(0)
+  maxAttempts      Int                       @default(3)
+  errorMessage     String?
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  payload          Json?
+  result           Json?
+  createdByAdminId String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  document         KnowledgeDocument         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([documentId, status])
+}

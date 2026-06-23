@@ -1,0 +1,14 @@
+{
+  "admin.sessionExpiredTitle": "管理者セッションの有効期限が切れました",
+  "admin.sessionExpiredMessage": "管理者セッションの有効期限が切れました。再度ログインしてください。",
+  "paymentGateway.wechatLink": "WeChatリンク",
+  "paymentGateway.maxLink": "MAXリンク",
+  "paymentGateway.wechatMerchantCertificate": "マーチャント証明書（PEM、任意）",
+  "orderDetail.contactManagerWechat": "WeChatで担当者に連絡",
+  "orderDetail.contactManagerMax": "MAXで担当者に連絡",
+  "checkout.placeOrderWithWechat": "注文してWeChatを開く",
+  "checkout.placeOrderWithMax": "注文してMAXを開く",
+  "homepage.viewAllBlog": "すべての記事を見る",
+  "homepage.noBlogPosts": "まだ記事がありません",
+  "homepage.blogSection": "ブログ"
+}

@@ -1,4 +1,4 @@
-# SIB ECO AI CMS
+# SIB ECOM AI CMS
 
 ![Shop screenshot](shop.png)
 

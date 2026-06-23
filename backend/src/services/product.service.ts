@@ -20,6 +20,68 @@ export class ProductService {
     return quantity - reserved > 0;
   }
 
+  private async getStorefrontEligibleProductIds(
+    inventoryStatus?: ProductFilters['inventoryStatus']
+  ): Promise<string[] | null> {
+    const inventory = await prisma.inventory.findMany({
+      where: {
+        status: { in: [...this.storefrontStatuses] },
+        quantity: { gt: 0 },
+      },
+      select: {
+        productId: true,
+        status: true,
+        quantity: true,
+        reserved: true,
+      },
+    });
+
+    const availableInventory = inventory.filter((item) =>
+      this.hasAvailableInventory(item.quantity, item.reserved)
+    );
+
+    if (!inventoryStatus) {
+      return Array.from(new Set(availableInventory.map((item) => item.productId)));
+    }
+
+    const productStatusMap = new Map<
+      string,
+      { hasInSale: boolean; hasComingSoon: boolean }
+    >();
+
+    for (const item of availableInventory) {
+      const existing = productStatusMap.get(item.productId) ?? {
+        hasInSale: false,
+        hasComingSoon: false,
+      };
+
+      if (item.status === InventoryStatus.IN_SALE) {
+        existing.hasInSale = true;
+      }
+      if (item.status === InventoryStatus.COMING_SOON) {
+        existing.hasComingSoon = true;
+      }
+
+      productStatusMap.set(item.productId, existing);
+    }
+
+    const matchingIds: string[] = [];
+
+    for (const [productId, availability] of productStatusMap.entries()) {
+      if (inventoryStatus === 'IN_SALE' && availability.hasInSale) {
+        matchingIds.push(productId);
+      } else if (
+        inventoryStatus === 'COMING_SOON' &&
+        availability.hasComingSoon &&
+        !availability.hasInSale
+      ) {
+        matchingIds.push(productId);
+      }
+    }
+
+    return matchingIds;
+  }
+
   private extractComingSoonState(
     product: { variants?: Array<{ id: string; size?: string | null }> },
     inventory: Array<{ status: InventoryStatus; quantity: number; reserved: number; variantId?: string | null }>
@@ -190,55 +252,17 @@ export class ProductService {
     // Only apply for public-facing requests (when isActive is true or not specified).
     // Skip this check if explicitly requested (for admin panel).
     if ((filters?.isActive === undefined || filters?.isActive === true) && filters?.skipInventoryCheck !== true) {
-      const andConditions = Array.isArray(where.AND) ? [...where.AND] : [];
+      const eligibleProductIds = await this.getStorefrontEligibleProductIds(filters?.inventoryStatus);
 
-      if (filters?.inventoryStatus === 'IN_SALE') {
-        where.inventory = {
-          some: {
-            status: InventoryStatus.IN_SALE,
-            quantity: { gt: 0 },
-          },
+      if (filters?.inventoryStatus === 'OUT_OF_STOCK') {
+        where.id = {
+          ...(typeof where.id === 'object' && where.id !== null ? where.id : {}),
+          notIn: eligibleProductIds ?? [],
         };
-      } else if (filters?.inventoryStatus === 'COMING_SOON') {
-        andConditions.push(
-          {
-            inventory: {
-              some: {
-                status: InventoryStatus.COMING_SOON,
-                quantity: { gt: 0 },
-              },
-            },
-          },
-          {
-            NOT: {
-              inventory: {
-                some: {
-                  status: InventoryStatus.IN_SALE,
-                  quantity: { gt: 0 },
-                },
-              },
-            },
-          }
-        );
-        where.AND = andConditions;
-      } else if (filters?.inventoryStatus === 'OUT_OF_STOCK') {
-        andConditions.push({
-          NOT: {
-            inventory: {
-              some: {
-                status: { in: [...this.storefrontStatuses] },
-                quantity: { gt: 0 },
-              },
-            },
-          },
-        });
-        where.AND = andConditions;
       } else {
-        where.inventory = {
-          some: {
-            status: { in: [...this.storefrontStatuses] },
-            quantity: { gt: 0 },
-          },
+        where.id = {
+          ...(typeof where.id === 'object' && where.id !== null ? where.id : {}),
+          in: eligibleProductIds ?? [],
         };
       }
     }

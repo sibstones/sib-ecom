@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { HomepageSection } from '$lib/api/homepage.api';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
   import HomepageInlineEditable from '$lib/components/homepage/HomepageInlineEditable.svelte';
   import HomepageInlineMediaDropzone from '$lib/components/homepage/HomepageInlineMediaDropzone.svelte';
   import RevealSection from '$lib/components/homepage/RevealSection.svelte';
@@ -103,15 +104,17 @@
           <div
             class="relative w-full max-w-6xl mx-auto overflow-hidden bg-neutral-100 group {aspectClass}"
           >
-            <video
+            <HomepageAutoplayVideo
               src={videoUrl}
               autoplay={videoAutoplay}
               loop={videoLoop}
               muted={videoMuted}
               controls={videoControls}
               playsinline={videoPlaysinline}
-              class={`w-full h-full object-cover ${mediaHoverClass}`}
-            ></video>
+              className={`w-full h-full object-cover ${mediaHoverClass}`}
+              preload="auto"
+              ariaLabel={title || 'Homepage video'}
+            />
             <HomepageInlineMediaDropzone
               enabled={inlineEditing}
               accept="video/*"
@@ -134,17 +137,26 @@
               </div>
             {/if}
             {#if (buttonLink && buttonText && mediaLinkMode !== 'none') || inlineEditing}
-              <div
-                class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
-              >
-                <HomepageInlineEditable
-                  tag="span"
-                  value={buttonText}
-                  enabled={inlineEditing}
-                  placeholder={t('homepage.editor.buttonText')}
-                  on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
-                />
-              </div>
+              {#if inlineEditing}
+                <div
+                  class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  <HomepageInlineEditable
+                    tag="span"
+                    value={buttonText}
+                    enabled={true}
+                    placeholder={t('homepage.editor.buttonText')}
+                    on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
+                  />
+                </div>
+              {:else if buttonLink && buttonText && mediaLinkMode !== 'none'}
+                <a
+                  href={buttonLink}
+                  class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  {buttonText}
+                </a>
+              {/if}
             {/if}
           </div>
         {:else if imageUrl}
@@ -177,17 +189,26 @@
               </div>
             {/if}
             {#if (buttonLink && buttonText && mediaLinkMode !== 'none') || inlineEditing}
-              <div
-                class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
-              >
-                <HomepageInlineEditable
-                  tag="span"
-                  value={buttonText}
-                  enabled={inlineEditing}
-                  placeholder={t('homepage.editor.buttonText')}
-                  on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
-                />
-              </div>
+              {#if inlineEditing}
+                <div
+                  class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  <HomepageInlineEditable
+                    tag="span"
+                    value={buttonText}
+                    enabled={true}
+                    placeholder={t('homepage.editor.buttonText')}
+                    on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
+                  />
+                </div>
+              {:else if buttonLink && buttonText && mediaLinkMode !== 'none'}
+                <a
+                  href={buttonLink}
+                  class="absolute left-1/2 -translate-x-1/2 bottom-6 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  {buttonText}
+                </a>
+              {/if}
             {/if}
           </div>
         {/if}

@@ -4,13 +4,12 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { get } from 'svelte/store';
   import { t, translateError } from '$lib/utils/i18n';
   import Captcha from '$lib/components/Captcha.svelte';
   import type CaptchaComponent from '$lib/components/Captcha.svelte';
   import OAuthButtons from '$lib/components/OAuthButtons.svelte';
-  import { pageApi } from '$lib/api/page.api';
-  import { i18nStore } from '$lib/stores/i18n.store';
+  import type { FeatureSettings } from '$lib/api/settings.api';
+  import type { PageData } from './$types';
 
   let email = '';
   let password = '';
@@ -18,26 +17,47 @@
   let loading = false;
   let captchaComponent: CaptchaComponent;
   let captchaToken = '';
+  export let data: PageData;
 
   let loginStep: 'credentials' | 'twoFactor' = 'credentials';
   let pendingTwoFactorToken = '';
   let twoFactorCode = '';
-  let loginShowcaseImage = '/login-showcase.png';
-  let loginHeroBadge = 'Content Management';
-  let loginHeroEyebrow = 'Admin access';
-  let loginHeroTitle = 'Visual workspace for your shop operations.';
-  let loginHeroDescription =
-    'Left panel is ready for a branded image, campaign visual, or showroom-style artwork while the form stays focused on the right.';
 
-  type LoginPageConfig = {
-    imageUrl?: string;
-    badge?: string;
-    eyebrow?: string;
-    sideTitle?: string;
-    description?: string;
+  const fallbackThemeSettings: Pick<
+    FeatureSettings,
+    | 'fontFamily'
+    | 'fontSizeBody'
+    | 'textTransformUppercase'
+    | 'colorBackground'
+    | 'colorBackgroundSecondary'
+    | 'colorBlack'
+  > = {
+    fontFamily: 'Inter, Helvetica, Arial, sans-serif',
+    fontSizeBody: '1rem',
+    textTransformUppercase: false,
+    colorBackground: '#ffffff',
+    colorBackgroundSecondary: '#f9f9f9',
+    colorBlack: '#000000',
   };
 
   $: captchaRequired = $settingsStore.captchaEnabled && $settingsStore.captchaRequiredForLogin;
+  $: loginShowcaseImage = data.loginConfig.imageUrl;
+  $: loginHeroBadge = data.loginConfig.badge;
+  $: loginHeroEyebrow = data.loginConfig.eyebrow;
+  $: loginHeroTitle = data.loginConfig.sideTitle;
+  $: loginHeroDescription = data.loginConfig.description;
+  $: loginTheme = {
+    ...fallbackThemeSettings,
+    ...(data.themeSettings ?? {}),
+  };
+  $: loginPageStyle = [
+    `font-family: ${loginTheme.fontFamily}`,
+    `font-size: ${loginTheme.fontSizeBody}`,
+    `text-transform: ${loginTheme.textTransformUppercase ? 'uppercase' : 'none'}`,
+    `background-color: ${loginTheme.colorBackground}`,
+    `color: ${loginTheme.colorBlack}`,
+  ].join('; ');
+  $: loginPanelStyle = `background-color: ${loginTheme.colorBackgroundSecondary};`;
 
   function handleCaptchaVerify(token: string) {
     captchaToken = token;
@@ -62,34 +82,12 @@
     return returnUrl || '/account/profile';
   }
 
-  async function loadLoginPageContent() {
-    try {
-      const languageCode = get(i18nStore);
-      const response = await pageApi.getBySlug('login', languageCode);
-      const content = response.page?.content;
-      if (!content) return;
-
-      const parsed = JSON.parse(content) as { config?: LoginPageConfig };
-      const config = parsed.config;
-      if (!config) return;
-
-      loginShowcaseImage = config.imageUrl || loginShowcaseImage;
-      loginHeroBadge = config.badge || loginHeroBadge;
-      loginHeroEyebrow = config.eyebrow || loginHeroEyebrow;
-      loginHeroTitle = config.sideTitle || loginHeroTitle;
-      loginHeroDescription = config.description || loginHeroDescription;
-    } catch {
-      // Fallback to built-in login artwork and copy when CMS page is not configured yet.
-    }
-  }
-
-  onMount(async () => {
+  onMount(() => {
     // Check authentication status on mount
     if ($authStore.isAuthenticated) {
       goto(getReturnUrl());
       return;
     }
-    await loadLoginPageContent();
   });
 
   async function handleSubmit() {
@@ -162,7 +160,7 @@
   }
 </script>
 
-<main class="min-h-screen bg-[#f3ede6] px-4 py-6 sm:px-6 lg:px-8">
+<main class="min-h-screen bg-[#f3ede6] px-4 py-6 sm:px-6 lg:px-8" style={loginPageStyle}>
   <div
     class="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-7xl overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-[0_30px_80px_rgba(27,22,18,0.12)]"
   >
@@ -195,6 +193,7 @@
 
     <section
       class="flex w-full items-center justify-center bg-[#fcfaf7] px-6 py-10 sm:px-10 lg:max-w-[540px] lg:px-12 xl:px-16"
+      style={loginPanelStyle}
     >
       <div class="w-full max-w-md">
         <div class="mb-8">

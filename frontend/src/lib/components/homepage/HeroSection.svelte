@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { HomepageSection } from '$lib/api/homepage.api';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
   import HomepageInlineEditable from '$lib/components/homepage/HomepageInlineEditable.svelte';
   import HomepageInlineMediaDropzone from '$lib/components/homepage/HomepageInlineMediaDropzone.svelte';
   import { t } from '$lib/utils/i18n';
@@ -56,6 +57,8 @@
   $: videoPlaysinline =
     configAny.videoPlaysinline !== undefined ? configAny.videoPlaysinline : true;
   $: description = typeof configAny.description === 'string' ? configAny.description : '';
+  $: buttonText = typeof configAny.buttonText === 'string' ? configAny.buttonText : '';
+  $: buttonLink = typeof configAny.buttonLink === 'string' ? configAny.buttonLink : '';
   $: secondaryButtonText = configAny.secondaryButtonText;
   $: secondaryButtonLink = configAny.secondaryButtonLink;
   $: heroTitle = typeof section?.title === 'string' ? section.title.trim() : '';
@@ -150,16 +153,18 @@
 
     {#if videoUrl && videoUrl.length > 0}
       <div class="absolute inset-0">
-        <video
+        <HomepageAutoplayVideo
           src={videoUrl}
           autoplay={videoAutoplay}
           loop={videoLoop}
           muted={videoMuted}
           controls={videoControls}
           playsinline={videoPlaysinline}
-          class="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           style="opacity: {parseInt(imageOpacity) / 100}"
-        ></video>
+          preload="auto"
+          ariaLabel={heroTitle || 'Hero video'}
+        />
         <HomepageInlineMediaDropzone
           enabled={inlineEditing}
           accept="video/*"
@@ -197,7 +202,7 @@
           />
         </p>
       {/if}
-      {#if config.buttonText || inlineEditing}
+      {#if buttonText || inlineEditing}
         <div
           class="flex items-center {textAlign === 'center'
             ? 'justify-center'
@@ -205,20 +210,32 @@
               ? 'justify-end'
               : 'justify-start'} space-x-4"
         >
-          <div
-            class="px-8 py-4 {!buttonColor
-              ? 'bg-accent text-white'
-              : ''} font-medium hover:opacity-90 transition-opacity"
-            style={buttonStyleStr}
-          >
-            <HomepageInlineEditable
-              tag="span"
-              value={config.buttonText || ''}
-              enabled={inlineEditing}
-              placeholder={t('homepage.editor.buttonText')}
-              on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
-            />
-          </div>
+          {#if inlineEditing}
+            <div
+              class="px-8 py-4 {!buttonColor
+                ? 'bg-accent text-white'
+                : ''} font-medium hover:opacity-90 transition-opacity"
+              style={buttonStyleStr}
+            >
+              <HomepageInlineEditable
+                tag="span"
+                value={buttonText}
+                enabled={true}
+                placeholder={t('homepage.editor.buttonText')}
+                on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
+              />
+            </div>
+          {:else if buttonText && buttonLink}
+            <a
+              href={buttonLink}
+              class="inline-flex px-8 py-4 {!buttonColor
+                ? 'bg-accent text-white'
+                : ''} font-medium hover:opacity-90 transition-opacity"
+              style={buttonStyleStr}
+            >
+              {buttonText}
+            </a>
+          {/if}
           {#if secondaryButtonText}
             <a
               href={secondaryButtonLink || '/lookbook'}

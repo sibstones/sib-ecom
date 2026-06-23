@@ -208,7 +208,7 @@ app.use('/api', apiLimiter);
 
 console.log(
   config.rateLimit.apiDisabled
-    ? '⚠️ API rate limit: DISABLED (dev/local override)'
+    ? '⚠️ API rate limit: DISABLED'
     : `✅ API rate limit: ON (${config.rateLimit.apiMax}/${config.rateLimit.apiWindowMinutes}m)`
 );
 

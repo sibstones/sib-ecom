@@ -277,9 +277,6 @@ function validateProductionSecurityConfig(): void {
   if (insecureJwtDefaults.has(config.jwt.refreshSecret) || config.jwt.refreshSecret.length < 32) {
     errors.push('JWT_REFRESH_SECRET must be set to a strong value (at least 32 chars) in production');
   }
-  if (config.rateLimit.apiDisabled) {
-    errors.push('API rate limiting must not be disabled in production');
-  }
   if (config.authCookies.sameSite === 'none' && !config.authCookies.secure) {
     errors.push('AUTH_COOKIE_SAMESITE=none requires AUTH_COOKIE_SECURE=true in production');
   }

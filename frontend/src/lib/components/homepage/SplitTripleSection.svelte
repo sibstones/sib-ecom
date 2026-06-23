@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { HomepageSection, CardItem } from '$lib/api/homepage.api';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
   import HomepageInlineMediaDropzone from '$lib/components/homepage/HomepageInlineMediaDropzone.svelte';
   import RevealSection from '$lib/components/homepage/RevealSection.svelte';
   import { t } from '$lib/utils/i18n';
@@ -140,14 +141,16 @@
                         : card.borderRadius || 'rounded-lg'} aspect-[4/5]"
                     >
                       {#if card.videoUrl}
-                        <video
+                        <HomepageAutoplayVideo
                           src={card.videoUrl}
                           autoplay
                           loop
                           muted
                           playsinline
-                          class="w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
-                        ></video>
+                          className="w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
+                          preload="metadata"
+                          ariaLabel={card.title || `Card ${index + 1}`}
+                        />
                       {:else if card.imageUrl}
                         <BlurredImage
                           src={card.imageUrl}
@@ -184,14 +187,16 @@
                         : card.borderRadius || 'rounded-lg'} aspect-[4/5]"
                     >
                       {#if card.videoUrl}
-                        <video
+                        <HomepageAutoplayVideo
                           src={card.videoUrl}
                           autoplay
                           loop
                           muted
                           playsinline
-                          class="w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
-                        ></video>
+                          className="w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.03]"
+                          preload="metadata"
+                          ariaLabel={card.title || `Card ${index + 1}`}
+                        />
                         <HomepageInlineMediaDropzone
                           enabled={inlineEditing}
                           accept="video/*"
@@ -265,15 +270,17 @@
         {#if videoUrl}
           <div class="{mediaColClass} h-full order-3 lg:order-3 {aspectClass} lg:aspect-auto">
             <div class="absolute inset-0 group overflow-hidden">
-              <video
+              <HomepageAutoplayVideo
                 src={videoUrl}
                 autoplay={videoAutoplay}
                 loop={videoLoop}
                 muted={videoMuted}
                 controls={videoControls}
                 playsinline={videoPlaysinline}
-                class={`w-full h-full object-cover ${mediaHoverClass}`}
-              ></video>
+                className={`w-full h-full object-cover ${mediaHoverClass}`}
+                preload="auto"
+                ariaLabel={title || 'Homepage video'}
+              />
               <HomepageInlineMediaDropzone
                 enabled={inlineEditing}
                 accept="video/*"

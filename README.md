@@ -1,14 +1,8 @@
-# SIB ECOM AI CMS
+# SIB CMS
 
 ![Shop screenshot](shop.png)
 
 Full-featured e-commerce platform for a store: storefront on `SvelteKit`, backend API on `Express + TypeScript`, `PostgreSQL` via `Prisma`, file storage in `S3`/`MinIO`, and a separate RAG setup for `GPT Assistant`.
-
-## Active Projects
-
-| Project | Description |
-| --- | --- |
-| [shisterov.to](https://shisterov.to/) | Niche brand, personal online store, and designer showcase for Danila Shisterov |
 
 ## Repository Layout
 

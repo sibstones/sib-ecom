@@ -166,6 +166,10 @@
   let inventoryStatusDropdownRect: DOMRect | null = null;
   let inventoryStatusDropdownPanel: HTMLDivElement | undefined;
   let inventoryStatusOutsideHandler: ((e: MouseEvent) => void) | null = null;
+  let shopHeaderCategories: Category[] = [];
+  let shopHeaderMainCategory: Category | null = null;
+  let shopHeaderSubCategory: Category | null = null;
+  let shopHeaderCategoryParam = '';
   function closeInventoryStatusDropdown() {
     inventoryStatusDropdownOpen = false;
     inventoryStatusDropdownRect = null;
@@ -263,6 +267,72 @@
   let lastCategoryParam = data.initialState.categoryParam ?? '';
   let lastSearchParam = data.initialState.searchQuery ?? '';
   let lastInventoryStatusParam = data.initialState.selectedInventoryStatus ?? '';
+  let lastResolvedSelectedCategoryId = data.initialState.selectedCategory ?? '';
+  let lastHydratedDataKey = '';
+
+  function getDataHydrationKey() {
+    return JSON.stringify({
+      languageCode: data.languageCode ?? '',
+      categoryParam: data.initialState.categoryParam ?? '',
+      selectedCategory: data.initialState.selectedCategory ?? '',
+      selectedBrand: data.initialState.selectedBrand ?? '',
+      minPrice: data.initialState.minPrice ?? '',
+      maxPrice: data.initialState.maxPrice ?? '',
+      searchQuery: data.initialState.searchQuery ?? '',
+      selectedColor: data.initialState.selectedColor ?? '',
+      selectedMaterial: data.initialState.selectedMaterial ?? '',
+      selectedCountryOfOrigin: data.initialState.selectedCountryOfOrigin ?? '',
+      selectedSize: data.initialState.selectedSize ?? '',
+      selectedInventoryStatus: data.initialState.selectedInventoryStatus ?? '',
+      sortField: data.initialState.sortField ?? 'createdAt',
+      sortOrder: data.initialState.sortOrder ?? 'desc',
+      page: data.pagination.page ?? 1,
+      total: data.pagination.total ?? 0,
+      totalPages: data.pagination.totalPages ?? 1,
+      productIds: (data.products ?? []).map((product) => product.id),
+    });
+  }
+
+  function hydrateFromServerData() {
+    allCategories = data.allCategories ?? [];
+    mainCategories = data.mainCategories ?? [];
+    subCategories = data.subCategories ?? [];
+    brands = data.brands ?? [];
+    products = data.products ?? [];
+    currentPage = data.pagination.page ?? 1;
+    totalPages = data.pagination.totalPages ?? 1;
+    total = data.pagination.total ?? 0;
+    availableColors = data.availableFilters.availableColors ?? [];
+    availableMaterials = data.availableFilters.availableMaterials ?? [];
+    availableCountries = data.availableFilters.availableCountries ?? [];
+    availableSizes = data.availableFilters.availableSizes ?? [];
+    error = data.error ?? '';
+    loading =
+      !data.error &&
+      (data.products?.length ?? 0) === 0 &&
+      (data.allCategories?.length ?? 0) === 0 &&
+      (data.brands?.length ?? 0) === 0;
+
+    selectedMainCategory = data.initialState.selectedMainCategory ?? null;
+    selectedSubCategory = data.initialState.selectedSubCategory ?? null;
+    selectedCategory = data.initialState.selectedCategory ?? '';
+    selectedBrand = data.initialState.selectedBrand ?? '';
+    minPrice = data.initialState.minPrice ?? '';
+    maxPrice = data.initialState.maxPrice ?? '';
+    searchQuery = data.initialState.searchQuery ?? '';
+    selectedColor = data.initialState.selectedColor ?? '';
+    selectedMaterial = data.initialState.selectedMaterial ?? '';
+    selectedCountryOfOrigin = data.initialState.selectedCountryOfOrigin ?? '';
+    selectedSize = data.initialState.selectedSize ?? '';
+    selectedInventoryStatus = data.initialState.selectedInventoryStatus ?? '';
+    sortField = data.initialState.sortField ?? 'createdAt';
+    sortOrder = data.initialState.sortOrder ?? 'desc';
+
+    lastCategoryParam = data.initialState.categoryParam ?? '';
+    lastSearchParam = data.initialState.searchQuery ?? '';
+    lastInventoryStatusParam = data.initialState.selectedInventoryStatus ?? '';
+    lastResolvedSelectedCategoryId = data.initialState.selectedCategory ?? '';
+  }
 
   function parseInventoryStatusParam(
     value: string | null
@@ -382,6 +452,14 @@
     event.stopPropagation();
   }
 
+  $: {
+    const nextHydrationKey = getDataHydrationKey();
+    if (nextHydrationKey !== lastHydratedDataKey) {
+      lastHydratedDataKey = nextHydrationKey;
+      hydrateFromServerData();
+    }
+  }
+
   function findCategoryByParam(categoryParam: string): Category | null {
     if (!categoryParam || allCategories.length === 0) {
       return null;
@@ -406,6 +484,54 @@
     }
 
     return category || null;
+  }
+
+  function syncCategorySelectionState(categoryId: string) {
+    if (!categoryId || allCategories.length === 0) {
+      selectedMainCategory = null;
+      selectedSubCategory = null;
+      subCategories = [];
+      return;
+    }
+
+    const category = allCategories.find((item) => item.id === categoryId) ?? null;
+    if (!category) {
+      selectedMainCategory = null;
+      selectedSubCategory = null;
+      subCategories = [];
+      return;
+    }
+
+    if (category.isMain || !category.parentId) {
+      selectedMainCategory = category;
+      selectedSubCategory = null;
+      updateSubCategories(category.id);
+      return;
+    }
+
+    const parent = category.parent || allCategories.find((item) => item.id === category.parentId);
+    if (!parent) {
+      selectedMainCategory = null;
+      selectedSubCategory = null;
+      subCategories = [];
+      return;
+    }
+
+    if (parent.isMain || !parent.parentId) {
+      selectedMainCategory = parent;
+      selectedSubCategory = category;
+      updateSubCategories(parent.id);
+      return;
+    }
+
+    selectedSubCategory = parent;
+    selectedMainCategory =
+      parent.parent || allCategories.find((item) => item.id === parent.parentId) || null;
+    if (selectedMainCategory) {
+      updateSubCategories(selectedMainCategory.id);
+    } else {
+      subCategories = [];
+    }
   }
 
   function applyCategoryFromUrl() {
@@ -544,6 +670,87 @@
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  function resolveShopHeaderState(categoryParam: string) {
+    const activeCategory = findCategoryByParam(categoryParam);
+
+    if (!activeCategory) {
+      return {
+        mainCategory: selectedMainCategory,
+        subCategory: selectedSubCategory,
+        categories: selectedSubCategory ? getThirdLevelCategories(selectedSubCategory.id) : subCategories,
+      };
+    }
+
+    if (activeCategory.isMain || !activeCategory.parentId) {
+      return {
+        mainCategory: activeCategory,
+        subCategory: null,
+        categories: allCategories
+          .filter((category) => category.parentId === activeCategory.id && !category.isMain)
+          .sort((left, right) => left.name.localeCompare(right.name)),
+      };
+    }
+
+    const parent =
+      activeCategory.parent ||
+      allCategories.find((category) => category.id === activeCategory.parentId) ||
+      null;
+
+    if (!parent) {
+      return {
+        mainCategory: null,
+        subCategory: null,
+        categories: [],
+      };
+    }
+
+    if (parent.isMain || !parent.parentId) {
+      return {
+        mainCategory: parent,
+        subCategory: activeCategory,
+        categories: getThirdLevelCategories(activeCategory.id),
+      };
+    }
+
+    const mainCategory =
+      parent.parent || allCategories.find((category) => category.id === parent.parentId) || null;
+
+    return {
+      mainCategory,
+      subCategory: parent,
+      categories: getThirdLevelCategories(parent.id),
+    };
+  }
+
+  $: shopHeaderCategoryParam = $page.url.searchParams.get('category') ?? '';
+
+  $: if (
+    allCategories.length >= 0 &&
+    shopHeaderCategoryParam !== undefined &&
+    selectedCategory !== undefined
+  ) {
+    const nextHeaderState = resolveShopHeaderState(shopHeaderCategoryParam);
+    shopHeaderMainCategory = nextHeaderState.mainCategory;
+    shopHeaderSubCategory = nextHeaderState.subCategory;
+    shopHeaderCategories = nextHeaderState.categories;
+  }
+
+  function matchesSelectedInventoryStatus(product: Product): boolean {
+    if (!selectedInventoryStatus) {
+      return true;
+    }
+
+    if (selectedInventoryStatus === 'COMING_SOON') {
+      return product.isComingSoon === true;
+    }
+
+    if (selectedInventoryStatus === 'IN_SALE') {
+      return product.isComingSoon !== true;
+    }
+
+    return true;
+  }
+
   function getCategoryPath(category: Category): string {
     const path: string[] = [];
     let currentCategory: Category | undefined = category;
@@ -660,12 +867,15 @@
         imagesLimit: 10,
       });
       // Normalize: images is always an array (API returns up to 2 elements for the list)
-      products = (response.products ?? []).map((p) => ({
+      const normalizedProducts = (response.products ?? []).map((p) => ({
         ...p,
         images: Array.isArray(p.images) ? [...p.images] : [],
       }));
-      totalPages = response.pagination.totalPages;
-      total = response.pagination.total;
+      products = normalizedProducts.filter(matchesSelectedInventoryStatus);
+      total = selectedInventoryStatus ? products.length : response.pagination.total;
+      totalPages = selectedInventoryStatus
+        ? Math.max(1, Math.ceil(total / limitToUse))
+        : response.pagination.totalPages;
 
       const withTwo = products.filter((p) => (p.images?.length ?? 0) >= 2);
       if (import.meta.env.DEV) {
@@ -737,6 +947,11 @@
       applyCategoryFromUrl();
       loadProducts();
     }
+  }
+
+  $: if (allCategories.length > 0 && selectedCategory !== lastResolvedSelectedCategoryId) {
+    lastResolvedSelectedCategoryId = selectedCategory;
+    syncCategorySelectionState(selectedCategory);
   }
 
   // Also watch for search param changes
@@ -1073,17 +1288,17 @@
         {#if shopHeaderShowBreadcrumbs}
           <nav class="text-sm text-accent-muted">
             <a href="/" class="hover:text-accent transition-colors">{t('common.home')}</a>
-            {#if selectedMainCategory}
+            {#if shopHeaderMainCategory}
               <span class="mx-2">></span>
               <a
-                href="/shop?category={selectedMainCategory.slug}"
+                href="/shop?category={shopHeaderMainCategory.slug}"
                 class="hover:text-accent transition-colors"
               >
-                {selectedMainCategory.name}
+                {shopHeaderMainCategory.name}
               </a>
-              {#if selectedSubCategory}
+              {#if shopHeaderSubCategory}
                 <span class="mx-2">></span>
-                <span class="text-accent">{selectedSubCategory.name}</span>
+                <span class="text-accent">{shopHeaderSubCategory.name}</span>
               {/if}
             {:else}
               <span class="mx-2">></span>
@@ -1097,16 +1312,16 @@
           <h1
             class="font-bold text-accent leading-none tracking-[-0.04em] {shopHeaderTitleScaleClass}"
           >
-            {#if selectedSubCategory}
-              {selectedSubCategory.name}
-            {:else if selectedMainCategory}
-              {selectedMainCategory.name}
+            {#if shopHeaderSubCategory}
+              {shopHeaderSubCategory.name}
+            {:else if shopHeaderMainCategory}
+              {shopHeaderMainCategory.name}
             {/if}
           </h1>
         {/if}
 
         <!-- Filters Row -->
-        {#if (shopHeaderShowCategories && $settingsStore.categoryFilterEnabled && selectedSubCategory) || (shopHeaderShowSideMenuTab && ($settingsStore.filtersEnabled || $settingsStore.searchEnabled))}
+        {#if (shopHeaderShowCategories && shopHeaderCategories.length > 0) || (shopHeaderShowSideMenuTab && ($settingsStore.filtersEnabled || $settingsStore.searchEnabled))}
           <div class="pb-2">
             <div class="flex items-start gap-3">
               {#if shopHeaderShowSideMenuTab && ($settingsStore.filtersEnabled || $settingsStore.searchEnabled)}
@@ -1120,24 +1335,24 @@
                 </button>
               {/if}
 
-              {#if shopHeaderShowCategories && $settingsStore.categoryFilterEnabled && selectedSubCategory}
+              {#if shopHeaderShowCategories && shopHeaderCategories.length > 0}
                 <div class="min-w-0 flex-1">
                   <div
                     class="flex flex-wrap items-center gap-2 md:gap-3 {shopToolbarWrapperClass} {shopHeaderCategoriesJustifyClass}"
                   >
-                    {#if getThirdLevelCategories(selectedSubCategory.id).length > 0}
-                      {#each getThirdLevelCategories(selectedSubCategory.id).slice(0, shopHeaderCategoryLimit) as category}
-                        <a
-                          href="/shop?category={category.slug}"
-                          class="border hover:border-accent transition-colors whitespace-nowrap {shopToolbarCornerClass} {shopToolbarDensityClass} {selectedCategory ===
-                          category.id
-                            ? 'border-accent bg-accent text-dark'
-                            : shopToolbarChipClass}"
-                        >
-                          {category.name}
-                        </a>
+                    {#key `${$page.url.searchParams.get('category') ?? ''}:${shopHeaderCategories.map((category) => category.id).join(',')}`}
+                      {#each shopHeaderCategories.slice(0, shopHeaderCategoryLimit) as category}
+                      <a
+                        href="/shop?category={category.slug}"
+                        class="border hover:border-accent transition-colors whitespace-nowrap {shopToolbarCornerClass} {shopToolbarDensityClass} {selectedCategory ===
+                        category.id
+                          ? 'border-accent bg-accent text-dark'
+                          : shopToolbarChipClass}"
+                      >
+                        {category.name}
+                      </a>
                       {/each}
-                    {/if}
+                    {/key}
                   </div>
                 </div>
               {/if}

@@ -14,7 +14,7 @@
   import { settingsStore } from '$lib/stores/settings.store';
   import { authStore } from '$lib/stores/auth.store';
   import { customerApi } from '$lib/api/customer.api';
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { currencyStore } from '$lib/stores/currency.store';
   import { i18nStore } from '$lib/stores/i18n.store';
   import FilterSidebar from '$lib/components/FilterSidebar.svelte';
@@ -357,6 +357,14 @@
   });
 
   onDestroy(() => {
+    if (backNavigationTimer) {
+      clearTimeout(backNavigationTimer);
+      backNavigationTimer = null;
+    }
+  });
+
+  afterNavigate(() => {
+    isBackNavigating = false;
     if (backNavigationTimer) {
       clearTimeout(backNavigationTimer);
       backNavigationTimer = null;
@@ -1024,6 +1032,7 @@
             <CompleteTheLook
               relatedProductIds={product.relatedProducts}
               showCompleteTheLook={product.showCompleteTheLook ?? true}
+              languageCode={currentLanguage}
             />
           </LazyComponent>
         </div>

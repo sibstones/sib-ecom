@@ -2,6 +2,7 @@
   import type { HomepageSection } from '$lib/api/homepage.api';
   import type { CardItem } from '$lib/api/homepage.api';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
 
   export let section: HomepageSection | null = null;
 
@@ -30,14 +31,16 @@
                   : card.borderRadius || 'rounded-lg'} aspect-[4/5]"
               >
                 {#if card.videoUrl}
-                  <video
+                  <HomepageAutoplayVideo
                     src={card.videoUrl}
                     autoplay
                     loop
                     muted
                     playsinline
-                    class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 group-hover:brightness-75"
-                  ></video>
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 group-hover:brightness-75"
+                    preload="metadata"
+                    ariaLabel={card.title || `Card ${index + 1}`}
+                  />
                 {:else if card.imageUrl}
                   <BlurredImage
                     src={card.imageUrl}
@@ -76,14 +79,16 @@
                   : card.borderRadius || 'rounded-lg'} aspect-[4/5]"
               >
                 {#if card.videoUrl}
-                  <video
+                  <HomepageAutoplayVideo
                     src={card.videoUrl}
                     autoplay
                     loop
                     muted
                     playsinline
-                    class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 group-hover:brightness-75"
-                  ></video>
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 group-hover:brightness-75"
+                    preload="metadata"
+                    ariaLabel={card.title || `Card ${index + 1}`}
+                  />
                 {:else if card.imageUrl}
                   <BlurredImage
                     src={card.imageUrl}

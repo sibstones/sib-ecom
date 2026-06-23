@@ -2,6 +2,7 @@
   import type { HomepageSection } from '$lib/api/homepage.api';
   import { blogApi, type BlogPost } from '$lib/api/blog.api';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
   import { i18nStore } from '$lib/stores/i18n.store';
   import { t } from '$lib/utils/i18n';
 
@@ -74,14 +75,16 @@
             <article class="h-full">
               <div class="relative aspect-video overflow-hidden">
                 {#if post.videoUrl}
-                  <video
+                  <HomepageAutoplayVideo
                     src={post.videoUrl}
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     muted
                     loop
                     playsinline
                     autoplay
-                  ></video>
+                    preload="metadata"
+                    ariaLabel={post.title}
+                  />
                 {:else if post.thumbnailUrl}
                   <BlurredImage
                     src={post.thumbnailUrl}

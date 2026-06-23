@@ -123,17 +123,26 @@
               </div>
             {/if}
             {#if (buttonLink && buttonText && mediaLinkMode !== 'none') || inlineEditing}
-              <div
-                class="absolute left-1/2 -translate-x-1/2 bottom-5 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
-              >
-                <HomepageInlineEditable
-                  tag="span"
-                  value={buttonText}
-                  enabled={inlineEditing}
-                  placeholder={t('homepage.editor.buttonText')}
-                  on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
-                />
-              </div>
+              {#if inlineEditing}
+                <div
+                  class="absolute left-1/2 -translate-x-1/2 bottom-5 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  <HomepageInlineEditable
+                    tag="span"
+                    value={buttonText}
+                    enabled={true}
+                    placeholder={t('homepage.editor.buttonText')}
+                    on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
+                  />
+                </div>
+              {:else if buttonLink && buttonText && mediaLinkMode !== 'none'}
+                <a
+                  href={buttonLink}
+                  class="absolute left-1/2 -translate-x-1/2 bottom-5 bg-white/90 text-black text-xs sm:text-sm font-semibold px-4 py-2 hover:bg-white motion-safe:transition-colors {linkOverlayClass}"
+                >
+                  {buttonText}
+                </a>
+              {/if}
             {/if}
           </div>
         </div>
@@ -169,17 +178,26 @@
             />
           {/if}
           {#if (buttonText && buttonLink) || inlineEditing}
-            <div
-              class="inline-flex mt-8 px-8 py-3 bg-black text-white text-sm font-medium tracking-wide hover:bg-gray-800 motion-safe:transition-colors"
-            >
-              <HomepageInlineEditable
-                tag="span"
-                value={buttonText}
-                enabled={inlineEditing}
-                placeholder={t('homepage.editor.buttonText')}
-                on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
-              />
-            </div>
+            {#if inlineEditing}
+              <div
+                class="inline-flex mt-8 px-8 py-3 bg-black text-white text-sm font-medium tracking-wide hover:bg-gray-800 motion-safe:transition-colors"
+              >
+                <HomepageInlineEditable
+                  tag="span"
+                  value={buttonText}
+                  enabled={true}
+                  placeholder={t('homepage.editor.buttonText')}
+                  on:change={(event) => emitInlineEdit('config.buttonText', event.detail)}
+                />
+              </div>
+            {:else if buttonText && buttonLink}
+              <a
+                href={buttonLink}
+                class="inline-flex mt-8 px-8 py-3 bg-black text-white text-sm font-medium tracking-wide hover:bg-gray-800 motion-safe:transition-colors"
+              >
+                {buttonText}
+              </a>
+            {/if}
           {/if}
         </div>
       </div>

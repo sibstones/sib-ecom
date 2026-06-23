@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { productApi, type Product } from '$lib/api/product.api';
   import { formatPrice } from '$lib/utils/price.utils';
   import { getProductImageAlt } from '$lib/utils/image.utils';
@@ -9,29 +8,40 @@
 
   export let relatedProductIds: string[] = [];
   export let showCompleteTheLook: boolean = true;
+  export let languageCode: string | undefined = undefined;
 
   let relatedProducts: Product[] = [];
   let loading = false;
+  let currentLoadKey = '';
 
-  onMount(async () => {
-    if (relatedProductIds && relatedProductIds.length > 0) {
-      await loadRelatedProducts();
-    }
-  });
-
-  async function loadRelatedProducts() {
+  async function loadRelatedProducts(ids: string[], locale?: string) {
+    const loadKey = `${ids.join(',')}::${locale || ''}`;
+    currentLoadKey = loadKey;
     loading = true;
     try {
-      const promises = relatedProductIds.map((id) => productApi.getById(id));
+      const promises = ids.map((id) => productApi.getById(id, locale));
       const responses = await Promise.all(promises);
+      if (currentLoadKey !== loadKey) return;
       // Filter out inactive products
       relatedProducts = responses.map((r) => r.product).filter((p) => p.isActive);
     } catch (e) {
+      if (currentLoadKey !== loadKey) return;
       console.error('Failed to load related products:', e);
       relatedProducts = [];
     } finally {
-      loading = false;
+      if (currentLoadKey === loadKey) {
+        loading = false;
+      }
     }
+  }
+
+  $: relatedProductsKey = `${relatedProductIds.join(',')}::${languageCode || ''}`;
+  $: if (showCompleteTheLook && relatedProductsKey) {
+    loadRelatedProducts([...relatedProductIds], languageCode);
+  } else {
+    currentLoadKey = '';
+    relatedProducts = [];
+    loading = false;
   }
 
   function navigateToProduct(product: Product) {

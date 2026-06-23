@@ -9,6 +9,7 @@
   import { notificationStore } from '$lib/stores/notification.store';
   import { t } from '$lib/utils/i18n';
   import BlurredImage from '$lib/components/BlurredImage.svelte';
+  import HomepageAutoplayVideo from '$lib/components/homepage/HomepageAutoplayVideo.svelte';
 
   export let section: HomepageSection | null = null;
   export let products: Product[] = [];
@@ -95,16 +96,18 @@
             >
               {#if images.length > 0}
                 {#if shopCardVideoSupport && isVideoUrl(images[0].url)}
-                  <video
+                  <HomepageAutoplayVideo
                     src={images[0].url}
-                    class="w-full h-full object-cover {shopCardHoverAnimation === 'scale'
+                    className="w-full h-full object-cover {shopCardHoverAnimation === 'scale'
                       ? 'group-hover:scale-105 transition-transform duration-300'
                       : ''}"
                     muted
                     loop
                     playsinline
                     autoplay
-                  ></video>
+                    preload="metadata"
+                    ariaLabel={product.name}
+                  />
                 {:else}
                   <div
                     class="shop-card-first-img absolute inset-0 z-0 transition-opacity duration-300 ease-in-out {hasSecondImage

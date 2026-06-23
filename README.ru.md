@@ -4,6 +4,12 @@
 
 Полнофункциональный e-commerce проект для магазина: витрина на `SvelteKit`, backend API на `Express + TypeScript`, `PostgreSQL` через `Prisma`, хранение файлов в `S3`/`MinIO`, отдельный RAG-контур для `GPT Assistant`.
 
+## Активные проекты
+
+| Проект | Описание |
+| --- | --- |
+| [shisterov.to](https://shisterov.to/) | Нишевый бренд, персональный интернет-магазин и дизайнерский блок Данила Шистерова |
+
 ## Что внутри
 
 - `frontend/` — клиентская часть и admin UI на `SvelteKit`

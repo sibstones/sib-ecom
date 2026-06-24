@@ -800,14 +800,49 @@ export const adminApi = {
 
   // Reports (use apiClient so Bearer token is sent; raw fetch was returning 401)
   reports: {
+    getOverview: (
+      startDate: string,
+      endDate: string,
+      filters?: {
+        country?: string;
+        currency?: string;
+        source?: string;
+        warehouseId?: string;
+      }
+    ) => {
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+      if (filters?.country) params.set('country', filters.country);
+      if (filters?.currency) params.set('currency', filters.currency);
+      if (filters?.source) params.set('source', filters.source);
+      if (filters?.warehouseId) params.set('warehouseId', filters.warehouseId);
+      return apiClient.get<{ report: any }>(`/admin/reports/overview?${params.toString()}`);
+    },
     getSales: (startDate: string, endDate: string) =>
       apiClient.get<{ report: any }>(
         `/admin/reports/sales?startDate=${startDate}&endDate=${endDate}`
       ),
-    getCustomers: () => apiClient.get<{ report: any[] }>('/admin/reports/customers'),
-    getPurchases: (startDate: string, endDate: string) =>
+    getCustomers: (startDate: string, endDate: string) =>
+      apiClient.get<{ report: any[] }>(
+        `/admin/reports/customers?startDate=${startDate}&endDate=${endDate}`
+      ),
+    getPurchases: (startDate: string, endDate: string, warehouseId?: string) => {
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+      if (warehouseId) params.set('warehouseId', warehouseId);
+      return apiClient.get<{ report: any }>(`/admin/reports/purchases?${params.toString()}`);
+    },
+    getReturns: (startDate: string, endDate: string) =>
       apiClient.get<{ report: any }>(
-        `/admin/reports/purchases?startDate=${startDate}&endDate=${endDate}`
+        `/admin/reports/returns?startDate=${startDate}&endDate=${endDate}`
+      ),
+    getPaymentMethods: (startDate: string, endDate: string) =>
+      apiClient.get<{ report: any }>(
+        `/admin/reports/payment-methods?startDate=${startDate}&endDate=${endDate}`
       ),
     getDelivery: (startDate: string, endDate: string) =>
       apiClient.get<{ report: any }>(

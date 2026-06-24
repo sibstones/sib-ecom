@@ -3084,6 +3084,8 @@ export const en: Record<string, string> = {
 
   // Reports
   'report.reports': 'Reports',
+  'report.overviewReport': 'Overview Report',
+  'report.overviewReportHint': 'Cross-report KPI layer for the selected period.',
   'report.sales': 'Sales',
   'report.orders': 'Orders',
   'report.customers': 'Customers',
@@ -3096,8 +3098,10 @@ export const en: Record<string, string> = {
   'report.endDate': 'End Date',
   'report.generateReport': 'Generate Report',
   'report.totalRevenue': 'Total Revenue',
+  'report.grossRevenue': 'Gross Revenue',
   'report.totalOrders': 'Total Orders',
   'report.averageOrderValue': 'Average Order Value',
+  'report.averagePaidOrderValue': 'Average Paid Order Value',
   'report.topProducts': 'Top Products',
   'report.sold': 'sold',
   'report.noSalesData': 'No sales data available',
@@ -3117,15 +3121,33 @@ export const en: Record<string, string> = {
   'report.allReportsLoaded': 'All reports for period loaded',
   'report.whenEmptyHelp': 'When a report can be empty',
   'report.purchasesReport': 'Purchases Report',
+  'report.returnsReport': 'Returns Report',
+  'report.paymentMethodsReport': 'Payment Methods Report',
   'report.deliveryReport': 'Delivery Report',
   'report.customsReport': 'Customs Report',
   'report.taxSummary': 'Tax Summary',
   'report.totalPurchaseValue': 'Total Purchase Value',
+  'report.totalCustomsCost': 'Total Customs Cost',
+  'report.totalReturns': 'Total Returns',
+  'report.paidOrders': 'Paid Orders',
+  'report.deliveredOrders': 'Delivered Orders',
+  'report.refundedOrders': 'Refunded Orders',
+  'report.failedOrders': 'Failed Orders',
+  'report.netRevenue': 'Net Revenue',
+  'report.marginAfterOperations': 'Margin After Operations',
+  'report.conversionToPaid': 'Conversion To Paid',
+  'report.totalRefundAmount': 'Total Refund Amount',
+  'report.returnRate': 'Return Rate',
+  'report.deliveryRate': 'Delivery Rate',
+  'report.totalReturnItems': 'Returned Items',
   'report.totalMovements': 'Movements',
   'report.totalDeclarations': 'Declarations',
   'report.customsVat': 'Customs VAT',
   'report.customsDuty': 'Duty',
   'report.noPurchasesData': 'No purchases data',
+  'report.noOverviewData': 'No overview data',
+  'report.noReturnsData': 'No returns data',
+  'report.noPaymentMethodsData': 'No payment methods data',
   'report.noDeliveryData': 'No delivery data',
   'report.noCustomsData': 'No customs data',
   'report.region': 'Region',
@@ -3137,6 +3159,10 @@ export const en: Record<string, string> = {
     'All users with role «Customer»; empty if there are no customers in the system.',
   'report.whenEmptyPurchases':
     'Warehouse receipts (type «In») by movement creation date in period; empty if no receipts.',
+  'report.whenEmptyReturns':
+    'Return requests by creation date in period; empty if no return requests were created.',
+  'report.whenEmptyPaymentMethods':
+    'Orders grouped by stored paymentMethod in the selected period; gateway subtype details are not stored per order.',
   'report.whenEmptyDelivery':
     'Orders with filled shipment date in period; empty if order has no shipment date.',
   'report.whenEmptyCustoms':
@@ -3155,13 +3181,28 @@ export const en: Record<string, string> = {
   'report.number': 'Number',
   'report.date': 'Date',
   'report.direction': 'Direction',
+  'report.source': 'Source',
+  'report.ordersByCountry': 'Orders By Country',
+  'report.revenueByCurrency': 'Revenue By Currency',
+  'report.ordersBySource': 'Orders By Source',
+  'report.ordersByWarehouse': 'Orders By Warehouse',
+  'report.shareOfOrders': 'Share Of Orders',
+  'report.failedToLoadOverview': 'Failed to load overview report',
   'report.failedToLoadPurchases': 'Failed to load purchases report',
+  'report.failedToLoadReturns': 'Failed to load returns report',
+  'report.failedToLoadPaymentMethods': 'Failed to load payment methods report',
+  'report.failedToLoadWarehouses': 'Failed to load warehouses',
   'report.failedToLoadDelivery': 'Failed to load delivery report',
   'report.failedToLoadCustoms': 'Failed to load customs report',
   'report.failedToLoadTaxSummary': 'Failed to load tax summary',
   'report.failedToExport': 'Export failed',
   'report.failedToExportXlsx': 'Failed to export XLSX',
   'report.failedToLoadAll': 'Failed to load reports',
+  'report.allCurrencies': 'All currencies',
+  'report.allSources': 'All sources',
+  'report.allWarehouses': 'All warehouses',
+  'report.paymentMethodsGatewayNote':
+    'Card gateway orders are grouped by saved provider type when available; older orders may still appear as GATEWAY.',
 
   // Order shipment & documents (reports)
   'orderShipment.title': 'Delivery and documents for reporting',
@@ -3898,12 +3939,20 @@ export const en: Record<string, string> = {
   'blog.notConfigured': 'Blog is not configured yet',
   'blog.configureDesign': 'Configure blog design and layout',
   'blog.layoutStyle': 'Layout Style',
+  'blog.magazineBadge': 'MAGAZINE',
   'blog.magazine': 'Magazine',
   'blog.magazineDescription': 'Traditional blog layout with featured post',
+  'blog.squareBadge': 'SQUARE',
   'blog.instagram': 'Instagram',
   'blog.instagramDescription': 'Square grid layout',
+  'blog.squareDescription': 'Uniform 1:1 cards like an Instagram grid.',
+  'blog.video916Badge': 'VIDEO 9:16',
   'blog.tiktok': 'TikTok',
   'blog.tiktokDescription': 'Vertical video feed',
+  'blog.video916Description': 'Vertical reels-style feed with tall cards.',
+  'blog.mixedBadge': 'MIXED',
+  'blog.mixedFeed': 'Mixed Feed',
+  'blog.mixedFeedDescription': 'Adaptive grid where each post keeps its own format.',
   'blog.header': 'Header',
   'blog.headerTitle': 'Header Title',
   'blog.headerSubtitle': 'Header Subtitle',
@@ -4243,6 +4292,142 @@ export const en: Record<string, string> = {
   'gptAssistant.prompts.moveUp': 'Move up',
   'gptAssistant.prompts.moveDown': 'Move down',
   'gptAssistant.prompts.inactive': 'Hidden',
+  'gptAssistant.prompts.defaultText.admin': `You are an AI assistant for the administrator of an e-commerce store.
+
+Your task:
+1. Understand administrator requests in natural language
+2. Recognize intentions and extract parameters
+3. Perform actions through the API system
+4. Provide clear answers
+
+Available actions:
+- Manage products (search, create, edit)
+- Manage inventory (stock, transfers)
+- Manage orders (view, update status)
+- Manage customers (search, edit)
+- Configure integrations (payments, delivery, email)
+- Analytics and reports
+
+Important:
+- Always check access rights before performing actions
+- Validate all data before saving
+- Log all actions for audit
+- Provide clear error messages
+- Be brief and specific in answers`,
+  'gptAssistant.prompts.defaultText.customer': `You are a friendly AI assistant for an e-commerce store.
+
+Your task:
+1. Help customers find products through natural language
+2. Answer questions about products, delivery, payment
+3. Help with orders and tracking
+4. Provide personalized recommendations
+5. Be friendly, helpful and friendly
+
+Available actions:
+- Search products by description, features
+- Answers to questions about products (sizes, materials, availability)
+- Tracking orders
+- Manage cart and wishlist
+- Delivery and payment information
+- Product recommendations
+- Work with promo codes and loyalty program
+
+Important:
+- Always be friendly and friendly
+- Provide accurate information
+- Offer useful actions (add to cart, view details)
+- Help customers find what they need
+- If you don't know the answer, direct to support
+- Use emojis for friendliness (but don't overdo it)`,
+  'gptAssistant.prompts.defaultText.adminIntent': `You are an intent recognition system for an e-commerce admin panel (admin panel).
+
+Analyze the user's message and determine their intent. Respond with a JSON object:
+{
+  "intent": "INTENT_TYPE",
+  "confidence": 0.0-1.0,
+  "params": {
+    "key": "value"
+  }
+}
+
+Available admin intents:
+- PRODUCT_SEARCH: Search for products (keywords: product, show, find)
+- PRODUCT_CREATE: Create a new product (keywords: create, add)
+- PRODUCT_UPDATE: Update a product (keywords: update, change)
+- PRODUCT_DELETE: Delete a product (keywords: delete, remove)
+- INVENTORY_VIEW: View inventory/warehouse (keywords: inventory, warehouse)
+- INVENTORY_ADD: Add items to inventory (keywords: add inventory)
+- INVENTORY_TRANSFER: Transfer inventory between warehouses (keywords: transfer)
+- ORDER_SEARCH: Search for orders (keywords: orders, order, show orders, new orders). Params: status (PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED), paymentStatus (PENDING, PAID)
+- ORDER_VIEW: View order details (keywords: order details)
+- ORDER_UPDATE_STATUS: Update order status (keywords: update status)
+- ORDER_UPDATE_PAYMENT_STATUS: Update order payment status (keywords: payment status)
+- PAYMENT_REQUEST_VIEW: View payment requests (keywords: payment requests)
+- PAYMENT_REQUEST_CREATE: Create payment request for order (keywords: create payment request)
+- RETURN_REQUEST_VIEW: View return requests (keywords: return requests)
+- RETURN_REQUEST_APPROVE: Approve return request (keywords: approve return)
+- RETURN_REQUEST_REJECT: Reject return request (keywords: reject return)
+- TICKET_VIEW: View support tickets (keywords: tickets)
+- BLOG_POST_VIEW: View blog posts (keywords: blog posts)
+- BLOG_POST_CREATE: Create blog post (keywords: create blog post)
+- BLOG_POST_UPDATE: Update blog post (keywords: update blog post)
+- BLOG_POST_PUBLISH: Publish blog post (keywords: publish blog post)
+- CUSTOMER_SEARCH: Search for customers (keywords: customer, find customer)
+- CUSTOMER_VIEW: View customer details (keywords: customer profile)
+- CUSTOMER_UPDATE: Update customer information (keywords: update customer)
+- CUSTOMER_NOTE_ADD: Add note to customer (keywords: add note to customer)
+- CUSTOMER_NOTE_VIEW: View customer notes (keywords: customer notes)
+- ANALYTICS_VIEW: View analytics/dashboard (keywords: analytics, dashboard)
+- REPORT_GENERATE: Generate reports (keywords: report, create report)
+- HELP: User needs help (keywords: help, what you can do)
+- UNKNOWN: Cannot determine intent
+
+Extract parameters like: sku, orderNumber, email, price, quantity, warehouseId, status, etc.
+
+Examples:
+- "What are the new orders?" / "Show orders, awaiting processing" -> ORDER_SEARCH, params: {status: "PENDING"} or {status: "CONFIRMED"}
+- "Show problematic orders" -> ORDER_SEARCH (combine with RETURN_REQUEST_VIEW, TICKET_VIEW for full picture)
+- "Return requests" / "Return list" -> RETURN_REQUEST_VIEW
+- "Payment statistics for the week" -> PAYMENT_REQUEST_VIEW, params: {dateFrom: "..."} or REPORT_GENERATE, params: {reportType: "ACCOUNTING"}
+- "Blog posts" / "What was published in the blog?" -> BLOG_POST_VIEW
+- "Show products for a good mood...." -> PRODUCT_SEARCH, params: {brand: "BRAND"}
+- "Change order #ORD-12345 status to shipped" -> ORDER_UPDATE_STATUS, params: {orderNumber: "ORD-12345", status: "SHIPPED"}
+- "Add 10 units of product SKU-12345 to the warehouse Moscow" -> INVENTORY_ADD, params: {sku: "SKU-12345", quantity: 10, warehouse: "Moscow"}`,
+  'gptAssistant.prompts.defaultText.customerIntent': `You are an intent recognition system for an e-commerce customer assistant.
+
+Analyze the user's message and determine their intent. Respond with a JSON object:
+{
+  "intent": "INTENT_TYPE",
+  "confidence": 0.0-1.0,
+  "params": {
+    "key": "value"
+  }
+}
+
+Available customer intents:
+- CUSTOMER_PRODUCT_SEARCH: Search for products (keywords: product, buy)
+- CUSTOMER_PRODUCT_INFO: Get product information (keywords: sizes, materials, product information)
+- CUSTOMER_PRODUCT_RECOMMENDATIONS: Get product recommendations (keywords: recommendations, similar)
+- CUSTOMER_ORDER_TRACK: Track order status (keywords: order status, where is the order, track order)
+- CUSTOMER_ORDER_VIEW: View order details (keywords: order details)
+- CUSTOMER_ORDER_HISTORY: View order history (keywords: order history)
+- CUSTOMER_CART_VIEW: View shopping cart (keywords: cart)
+- CUSTOMER_CART_ADD: Add to cart (keywords: add to cart)
+- CUSTOMER_WISHLIST_VIEW: View wishlist (keywords: wishlist)
+- CUSTOMER_WISHLIST_ADD: Add to wishlist (keywords: add to wishlist)
+- CUSTOMER_DELIVERY_INFO: Get delivery information (keywords: delivery, delivery times)
+- CUSTOMER_PAYMENT_INFO: Get payment information (keywords: payment, payment methods)
+- CUSTOMER_STORE_INFO: Get store information (keywords: store info)
+- CUSTOMER_FAQ: Frequently asked questions (keywords: frequently asked questions, FAQ)
+- HELP: User needs help (keywords: help, what you can do)
+- UNKNOWN: Cannot determine intent
+
+Extract parameters like: productId, orderNumber, size, color, category, brand, query, url, path, etc.
+
+Examples:
+- "Show black t-shirts size M" -> CUSTOMER_PRODUCT_SEARCH, params: {color: "black", size: "M", category: "t-shirts"}
+- "Where is my order #ORD-12345?" -> CUSTOMER_ORDER_TRACK, params: {orderNumber: "ORD-12345"}
+- "How much is delivery to Moscow?" -> CUSTOMER_DELIVERY_INFO, params: {city: "Moscow"}`,
   'gptAssistant.analytics.title': 'GPT Assistant Analytics',
   'gptAssistant.analytics.refresh': 'Refresh',
   'gptAssistant.analytics.totalRequests': 'Total Requests',

@@ -323,7 +323,7 @@
                 : 'border-gray-300'}"
             >
               <div class="text-[11px] uppercase tracking-[0.18em] text-accent-muted mb-2">
-                MAGAZINE
+                {t('blog.magazineBadge') || 'MAGAZINE'}
               </div>
               <h4 class="font-medium mb-2">{t('blog.magazine') || 'Magazine'}</h4>
               <p class="text-sm text-accent-muted flex-grow">
@@ -346,11 +346,11 @@
                 : 'border-gray-300'}"
             >
               <div class="text-[11px] uppercase tracking-[0.18em] text-accent-muted mb-2">
-                SQUARE
+                {t('blog.squareBadge') || 'SQUARE'}
               </div>
-              <h4 class="font-medium mb-2">Square</h4>
+              <h4 class="font-medium mb-2">{t('blog.square') || 'Square'}</h4>
               <p class="text-sm text-accent-muted flex-grow">
-                Uniform 1:1 cards like an Instagram grid.
+                {t('blog.squareDescription') || 'Uniform 1:1 cards like an Instagram grid.'}
               </p>
             </div>
           </label>
@@ -368,11 +368,11 @@
                 : 'border-gray-300'}"
             >
               <div class="text-[11px] uppercase tracking-[0.18em] text-accent-muted mb-2">
-                VIDEO 9:16
+                {t('blog.video916Badge') || 'VIDEO 9:16'}
               </div>
-              <h4 class="font-medium mb-2">Video 9:16</h4>
+              <h4 class="font-medium mb-2">{t('blog.video916') || 'Video 9:16'}</h4>
               <p class="text-sm text-accent-muted flex-grow">
-                Vertical reels-style feed with tall cards.
+                {t('blog.video916Description') || 'Vertical reels-style feed with tall cards.'}
               </p>
             </div>
           </label>
@@ -390,11 +390,12 @@
                 : 'border-gray-300'}"
             >
               <div class="text-[11px] uppercase tracking-[0.18em] text-accent-muted mb-2">
-                MIXED
+                {t('blog.mixedBadge') || 'MIXED'}
               </div>
-              <h4 class="font-medium mb-2">Mixed Feed</h4>
+              <h4 class="font-medium mb-2">{t('blog.mixedFeed') || 'Mixed Feed'}</h4>
               <p class="text-sm text-accent-muted flex-grow">
-                Adaptive grid where each post keeps its own format.
+                {t('blog.mixedFeedDescription') ||
+                  'Adaptive grid where each post keeps its own format.'}
               </p>
             </div>
           </label>

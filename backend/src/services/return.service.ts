@@ -729,6 +729,7 @@ export class ReturnService {
             orderNumber,
             shippingAddressId: originalOrder.shippingAddressId,
             paymentMethod: originalOrder.paymentMethod,
+            paymentGatewayType: originalOrder.paymentGatewayType,
             checkoutCurrency: originalOrder.checkoutCurrency || 'USD',
             checkoutFxCapturedAt: originalOrder.checkoutFxCapturedAt ?? undefined,
             checkoutFxRatesSnapshot: originalOrder.checkoutFxRatesSnapshot ?? undefined,

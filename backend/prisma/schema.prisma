@@ -721,6 +721,7 @@ model Order {
   status            OrderStatus   @default(PENDING)
   paymentStatus     PaymentStatus @default(PENDING)
   paymentMethod     String? // "GATEWAY" | "BANK_TRANSFER"
+  paymentGatewayType String? // "STRIPE" | "YOOKASSA" | ... for GATEWAY orders
   subtotal          Decimal       @db.Decimal(10, 2)
   tax               Decimal       @default(0) @db.Decimal(10, 2)
   shipping          Decimal       @default(0) @db.Decimal(10, 2)
@@ -775,6 +776,7 @@ model Order {
   @@index([salesPointId])
   @@index([paymentStatus])
   @@index([paymentMethod])
+  @@index([paymentGatewayType])
   @@index([shippedAt])
   @@map("orders")
 }

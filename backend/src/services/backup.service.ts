@@ -1206,6 +1206,7 @@ export class BackupService {
                 status: order.status,
                 paymentStatus: order.paymentStatus,
                 paymentMethod: order.paymentMethod,
+                paymentGatewayType: order.paymentGatewayType,
                 subtotal: order.subtotal,
                 tax: order.tax,
                 shipping: order.shipping,

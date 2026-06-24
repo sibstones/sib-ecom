@@ -12,7 +12,79 @@ function parseDateRange(req: Request, defaultDaysBack = 30): { startDate: Date; 
   return { startDate, endDate };
 }
 
+function parseOverviewFilters(req: Request): {
+  country?: string;
+  currency?: string;
+  source?: string;
+  warehouseId?: string;
+} {
+  const country = String(req.query.country || '').trim();
+  const currency = String(req.query.currency || '').trim();
+  const source = String(req.query.source || '').trim();
+  const warehouseId = String(req.query.warehouseId || '').trim();
+
+  return {
+    ...(country ? { country } : {}),
+    ...(currency ? { currency } : {}),
+    ...(source ? { source } : {}),
+    ...(warehouseId ? { warehouseId } : {}),
+  };
+}
+
 export class ReportController {
+  async generateOverviewReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const filters = parseOverviewFilters(req);
+      const report = await reportService.generateOverviewReport(startDate, endDate, filters);
+      res.json({ report });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to generate overview report',
+      });
+    }
+  }
+
+  async exportOverviewReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const filters = parseOverviewFilters(req);
+      const report = await reportService.generateOverviewReport(startDate, endDate, filters);
+      const csv = await reportService.exportOverviewReportToCSV(report);
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=overview-report-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export overview report',
+      });
+    }
+  }
+
+  async exportOverviewReportXLSX(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const filters = parseOverviewFilters(req);
+      const report = await reportService.generateOverviewReport(startDate, endDate, filters);
+      const buffer = await reportService.exportOverviewReportToXLSX(report);
+
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=overview-report-${Date.now()}.xlsx`
+      );
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export overview report (XLSX)',
+      });
+    }
+  }
+
   async generateSalesReport(req: Request, res: Response): Promise<void> {
     try {
       const { startDate, endDate } = parseDateRange(req);
@@ -28,7 +100,8 @@ export class ReportController {
 
   async generateCustomerReport(req: Request, res: Response): Promise<void> {
     try {
-      const report = await reportService.generateCustomerReport();
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateCustomerReport(startDate, endDate);
       res.json({ report });
     } catch (error) {
       res.status(500).json({
@@ -73,24 +146,9 @@ export class ReportController {
 
   async exportCustomerReport(req: Request, res: Response): Promise<void> {
     try {
-      const report = await reportService.generateCustomerReport();
-      
-      // Format customer report data for CSV
-      const formattedReport = report.map((customer) => ({
-        id: customer.id,
-        email: customer.email,
-        name: customer.name || '',
-        totalOrders: customer.totalOrders,
-        totalSpent: Number(customer.totalSpent).toFixed(2),
-        averageOrderValue: Number(customer.averageOrderValue).toFixed(2),
-        lastOrderDate: customer.lastOrderDate 
-          ? (customer.lastOrderDate instanceof Date 
-              ? customer.lastOrderDate.toISOString().split('T')[0]
-              : new Date(customer.lastOrderDate).toISOString().split('T')[0])
-          : '',
-      }));
-      
-      const csv = await reportService.exportToCSV(formattedReport, 'customer-report');
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateCustomerReport(startDate, endDate);
+      const csv = await reportService.exportCustomerReportToCSV(report);
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename=customer-report-${Date.now()}.csv`);
@@ -98,6 +156,22 @@ export class ReportController {
     } catch (error) {
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to export customer report',
+      });
+    }
+  }
+
+  async exportCustomerReportXLSX(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateCustomerReport(startDate, endDate);
+      const buffer = await reportService.exportCustomerReportToXLSX(report);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=customer-report-${Date.now()}.xlsx`);
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export customer report (XLSX)',
       });
     }
   }
@@ -154,6 +228,93 @@ export class ReportController {
     } catch (error) {
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to export purchases report (XLSX)',
+      });
+    }
+  }
+
+  async generateReturnsReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateReturnsReport(startDate, endDate);
+      res.json({ report });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to generate returns report',
+      });
+    }
+  }
+
+  async exportReturnsReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateReturnsReport(startDate, endDate);
+      const csv = await reportService.exportReturnsReportToCSV(report.returnRequests);
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=returns-report-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export returns report',
+      });
+    }
+  }
+
+  async exportReturnsReportXLSX(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generateReturnsReport(startDate, endDate);
+      const buffer = await reportService.exportReturnsReportToXLSX(report.returnRequests);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=returns-report-${Date.now()}.xlsx`);
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export returns report (XLSX)',
+      });
+    }
+  }
+
+  async generatePaymentMethodsReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generatePaymentMethodsReport(startDate, endDate);
+      res.json({ report });
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to generate payment methods report',
+      });
+    }
+  }
+
+  async exportPaymentMethodsReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generatePaymentMethodsReport(startDate, endDate);
+      const csv = await reportService.exportPaymentMethodsReportToCSV(report.methods);
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=payment-methods-report-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export payment methods report',
+      });
+    }
+  }
+
+  async exportPaymentMethodsReportXLSX(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const report = await reportService.generatePaymentMethodsReport(startDate, endDate);
+      const buffer = await reportService.exportPaymentMethodsReportToXLSX(report.methods);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=payment-methods-report-${Date.now()}.xlsx`);
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({
+        error:
+          error instanceof Error ? error.message : 'Failed to export payment methods report (XLSX)',
       });
     }
   }
@@ -262,6 +423,40 @@ export class ReportController {
     } catch (error) {
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to generate tax summary report',
+      });
+    }
+  }
+
+  async exportTaxSummaryReport(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const region = (req.query.region as string) || 'RU';
+      const report = await reportService.generateTaxSummaryReport(startDate, endDate, region);
+      const csv = await reportService.exportTaxSummaryReportToCSV(report);
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=tax-summary-${Date.now()}.csv`);
+      res.send(csv);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export tax summary report',
+      });
+    }
+  }
+
+  async exportTaxSummaryReportXLSX(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = parseDateRange(req);
+      const region = (req.query.region as string) || 'RU';
+      const report = await reportService.generateTaxSummaryReport(startDate, endDate, region);
+      const buffer = await reportService.exportTaxSummaryReportToXLSX(report);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=tax-summary-${Date.now()}.xlsx`);
+      res.send(buffer);
+    } catch (error) {
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to export tax summary report (XLSX)',
       });
     }
   }

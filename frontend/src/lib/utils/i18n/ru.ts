@@ -3101,6 +3101,8 @@ export const ru: Record<string, string> = {
 
   // Reports
   'report.reports': 'Отчеты',
+  'report.overviewReport': 'Сводный отчет',
+  'report.overviewReportHint': 'Слой KPI и срезов по всем отчетам за выбранный период.',
   'report.sales': 'Продажи',
   'report.orders': 'Заказы',
   'report.customers': 'Клиенты',
@@ -3113,8 +3115,10 @@ export const ru: Record<string, string> = {
   'report.endDate': 'Дата окончания',
   'report.generateReport': 'Сформировать отчет',
   'report.totalRevenue': 'Общая выручка',
+  'report.grossRevenue': 'Валовая выручка',
   'report.totalOrders': 'Всего заказов',
   'report.averageOrderValue': 'Средний чек',
+  'report.averagePaidOrderValue': 'Средний оплаченный заказ',
   'report.topProducts': 'Топ товаров',
   'report.sold': 'продано',
   'report.noSalesData': 'Нет данных о продажах',
@@ -3134,15 +3138,33 @@ export const ru: Record<string, string> = {
   'report.allReportsLoaded': 'Все отчёты за период загружены',
   'report.whenEmptyHelp': 'Когда отчёт бывает пустым',
   'report.purchasesReport': 'Отчет по закупкам',
+  'report.returnsReport': 'Отчет по возвратам',
+  'report.paymentMethodsReport': 'Отчет по способам оплаты',
   'report.deliveryReport': 'Отчет по доставке',
   'report.customsReport': 'Отчет по таможне',
   'report.taxSummary': 'Налоговая сводка',
   'report.totalPurchaseValue': 'Сумма поступлений',
+  'report.totalCustomsCost': 'Суммарные таможенные расходы',
+  'report.totalReturns': 'Всего возвратов',
+  'report.paidOrders': 'Оплаченных заказов',
+  'report.deliveredOrders': 'Доставленных заказов',
+  'report.refundedOrders': 'Заказов с возвратом',
+  'report.failedOrders': 'Неуспешных оплат',
+  'report.netRevenue': 'Чистая выручка',
+  'report.marginAfterOperations': 'Маржа после расходов',
+  'report.conversionToPaid': 'Конверсия в оплату',
+  'report.totalRefundAmount': 'Сумма возвратов',
+  'report.returnRate': 'Доля возвратов',
+  'report.deliveryRate': 'Доля доставок',
+  'report.totalReturnItems': 'Возвращенных единиц',
   'report.totalMovements': 'Движений',
   'report.totalDeclarations': 'Деклараций',
   'report.customsVat': 'НДС по таможне',
   'report.customsDuty': 'Пошлина',
   'report.noPurchasesData': 'Нет данных по закупкам',
+  'report.noOverviewData': 'Нет данных для сводного отчета',
+  'report.noReturnsData': 'Нет данных по возвратам',
+  'report.noPaymentMethodsData': 'Нет данных по способам оплаты',
   'report.noDeliveryData': 'Нет данных по доставке',
   'report.noCustomsData': 'Нет данных по таможне',
   'report.region': 'Регион',
@@ -3154,6 +3176,10 @@ export const ru: Record<string, string> = {
     'Все пользователи с ролью «Клиент»; пусто, если в системе нет клиентов.',
   'report.whenEmptyPurchases':
     'Приходы на склад (тип «Приход») по дате создания движения в периоде; пусто, если не было приёмок.',
+  'report.whenEmptyReturns':
+    'Запросы на возврат по дате создания в периоде; пусто, если за период не было новых возвратов.',
+  'report.whenEmptyPaymentMethods':
+    'Заказы, сгруппированные по сохраненному paymentMethod за период; точный карточный провайдер в заказе не хранится.',
   'report.whenEmptyDelivery':
     'Заказы с заполненной датой отгрузки в периоде; пусто, если в карточке заказа не проставлена дата отгрузки.',
   'report.whenEmptyCustoms':
@@ -3172,13 +3198,28 @@ export const ru: Record<string, string> = {
   'report.number': 'Номер',
   'report.date': 'Дата',
   'report.direction': 'Направление',
+  'report.source': 'Источник',
+  'report.ordersByCountry': 'Заказы по странам',
+  'report.revenueByCurrency': 'Выручка по валютам',
+  'report.ordersBySource': 'Заказы по источникам',
+  'report.ordersByWarehouse': 'Заказы по складам',
+  'report.shareOfOrders': 'Доля заказов',
+  'report.failedToLoadOverview': 'Не удалось загрузить сводный отчёт',
   'report.failedToLoadPurchases': 'Не удалось загрузить отчёт по закупкам',
+  'report.failedToLoadReturns': 'Не удалось загрузить отчёт по возвратам',
+  'report.failedToLoadPaymentMethods': 'Не удалось загрузить отчёт по способам оплаты',
+  'report.failedToLoadWarehouses': 'Не удалось загрузить склады',
   'report.failedToLoadDelivery': 'Не удалось загрузить отчёт по доставке',
   'report.failedToLoadCustoms': 'Не удалось загрузить отчёт по таможне',
   'report.failedToLoadTaxSummary': 'Не удалось загрузить налоговую сводку',
   'report.failedToExport': 'Не удалось экспортировать',
   'report.failedToExportXlsx': 'Не удалось экспортировать XLSX',
   'report.failedToLoadAll': 'Не удалось загрузить отчёты',
+  'report.allCurrencies': 'Все валюты',
+  'report.allSources': 'Все источники',
+  'report.allWarehouses': 'Все склады',
+  'report.paymentMethodsGatewayNote':
+    'Карточные заказы группируются по сохраненному типу провайдера, если он есть; старые заказы могут оставаться под GATEWAY.',
 
   // Order shipment & documents (reports)
   'orderShipment.title': 'Доставка и документы для отчётности',
@@ -3918,12 +3959,20 @@ export const ru: Record<string, string> = {
   'blog.notConfigured': 'Блог еще не настроен',
   'blog.configureDesign': 'Настройка дизайна и макета блога',
   'blog.layoutStyle': 'Стиль макета',
+  'blog.magazineBadge': 'ЖУРНАЛ',
   'blog.magazine': 'Журнал',
   'blog.magazineDescription': 'Традиционный макет блога с выделенным постом',
+  'blog.squareBadge': 'КВАДРАТ',
   'blog.instagram': 'Instagram',
   'blog.instagramDescription': 'Квадратная сетка',
+  'blog.squareDescription': 'Ровные карточки 1:1, как в сетке Instagram.',
+  'blog.video916Badge': 'ВИДЕО 9:16',
   'blog.tiktok': 'TikTok',
   'blog.tiktokDescription': 'Вертикальная лента видео',
+  'blog.video916Description': 'Вертикальная лента в стиле reels с высокими карточками.',
+  'blog.mixedBadge': 'СМЕШАННЫЙ',
+  'blog.mixedFeed': 'Смешанная лента',
+  'blog.mixedFeedDescription': 'Адаптивная сетка, где каждый пост сохраняет свой формат.',
   'blog.header': 'Заголовок',
   'blog.headerTitle': 'Заголовок страницы',
   'blog.headerSubtitle': 'Подзаголовок страницы',
@@ -4254,15 +4303,151 @@ export const ru: Record<string, string> = {
   'gptAssistant.prompts.tryAskingHint':
     'Эти вопросы показываются в пустом чате ассистента в блоке «Быстрые запросы».',
   'gptAssistant.prompts.addQuestion': 'Добавить вопрос',
-  'gptAssistant.prompts.question': 'Question',
-  'gptAssistant.prompts.questionPlaceholder': 'Enter the question shown to users...',
-  'gptAssistant.prompts.sortOrder': 'Display order',
-  'gptAssistant.prompts.delete': 'Delete',
-  'gptAssistant.prompts.deleteConfirm': 'Delete this prompt?',
-  'gptAssistant.prompts.deleted': 'Prompt deleted',
-  'gptAssistant.prompts.moveUp': 'Move up',
-  'gptAssistant.prompts.moveDown': 'Move down',
-  'gptAssistant.prompts.inactive': 'Hidden',
+  'gptAssistant.prompts.question': 'Вопрос',
+  'gptAssistant.prompts.questionPlaceholder': 'Введите вопрос, который будет показан пользователям...',
+  'gptAssistant.prompts.sortOrder': 'Порядок отображения',
+  'gptAssistant.prompts.delete': 'Удалить',
+  'gptAssistant.prompts.deleteConfirm': 'Удалить этот промпт?',
+  'gptAssistant.prompts.deleted': 'Промпт удален',
+  'gptAssistant.prompts.moveUp': 'Переместить выше',
+  'gptAssistant.prompts.moveDown': 'Переместить ниже',
+  'gptAssistant.prompts.inactive': 'Скрыт',
+  'gptAssistant.prompts.defaultText.admin': `Вы — AI-ассистент для администратора интернет-магазина.
+
+Ваша задача:
+1. Понимать запросы администратора на естественном языке
+2. Распознавать намерения и извлекать параметры
+3. Выполнять действия через API-систему
+4. Давать понятные ответы
+
+Доступные действия:
+- Управление товарами (поиск, создание, редактирование)
+- Управление складом и остатками (остатки, перемещения)
+- Управление заказами (просмотр, смена статуса)
+- Управление клиентами (поиск, редактирование)
+- Настройка интеграций (оплаты, доставка, email)
+- Аналитика и отчеты
+
+Важно:
+- Всегда проверяйте права доступа перед выполнением действий
+- Проверяйте данные перед сохранением
+- Логируйте все действия для аудита
+- Показывайте понятные сообщения об ошибках
+- Отвечайте кратко и по делу`,
+  'gptAssistant.prompts.defaultText.customer': `Вы — дружелюбный AI-ассистент интернет-магазина.
+
+Ваша задача:
+1. Помогать клиентам находить товары на естественном языке
+2. Отвечать на вопросы о товарах, доставке и оплате
+3. Помогать с заказами и отслеживанием
+4. Давать персональные рекомендации
+5. Быть дружелюбным и полезным
+
+Доступные действия:
+- Поиск товаров по описанию и характеристикам
+- Ответы на вопросы о товарах (размеры, материалы, наличие)
+- Отслеживание заказов
+- Работа с корзиной и избранным
+- Информация о доставке и оплате
+- Рекомендации товаров
+- Работа с промокодами и программой лояльности
+
+Важно:
+- Всегда будьте дружелюбны и вежливы
+- Давайте точную информацию
+- Предлагайте полезные действия (добавить в корзину, открыть детали)
+- Помогайте клиенту найти нужное
+- Если ответа нет, направляйте в поддержку
+- Можно использовать эмодзи для дружелюбия, но умеренно`,
+  'gptAssistant.prompts.defaultText.adminIntent': `Вы — система распознавания намерений для административной панели интернет-магазина.
+
+Проанализируйте сообщение пользователя и определите его намерение. Ответьте JSON-объектом:
+{
+  "intent": "INTENT_TYPE",
+  "confidence": 0.0-1.0,
+  "params": {
+    "key": "value"
+  }
+}
+
+Доступные намерения администратора:
+- PRODUCT_SEARCH: Поиск товаров (ключевые слова: товар, показать, найти)
+- PRODUCT_CREATE: Создание нового товара (ключевые слова: создать, добавить)
+- PRODUCT_UPDATE: Обновление товара (ключевые слова: обновить, изменить)
+- PRODUCT_DELETE: Удаление товара (ключевые слова: удалить, убрать)
+- INVENTORY_VIEW: Просмотр склада/остатков (ключевые слова: склад, остатки)
+- INVENTORY_ADD: Добавление остатков (ключевые слова: добавить остатки)
+- INVENTORY_TRANSFER: Перемещение между складами (ключевые слова: переместить, transfer)
+- ORDER_SEARCH: Поиск заказов (ключевые слова: заказы, заказ, показать заказы, новые заказы). Параметры: status (PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED), paymentStatus (PENDING, PAID)
+- ORDER_VIEW: Просмотр деталей заказа (ключевые слова: детали заказа)
+- ORDER_UPDATE_STATUS: Обновление статуса заказа (ключевые слова: обновить статус)
+- ORDER_UPDATE_PAYMENT_STATUS: Обновление статуса оплаты (ключевые слова: статус оплаты)
+- PAYMENT_REQUEST_VIEW: Просмотр платежных запросов (ключевые слова: платежные запросы)
+- PAYMENT_REQUEST_CREATE: Создание платежного запроса для заказа (ключевые слова: создать платежный запрос)
+- RETURN_REQUEST_VIEW: Просмотр заявок на возврат (ключевые слова: возвраты, заявки на возврат)
+- RETURN_REQUEST_APPROVE: Подтверждение возврата (ключевые слова: подтвердить возврат)
+- RETURN_REQUEST_REJECT: Отклонение возврата (ключевые слова: отклонить возврат)
+- TICKET_VIEW: Просмотр тикетов поддержки (ключевые слова: тикеты, обращения)
+- BLOG_POST_VIEW: Просмотр постов блога (ключевые слова: посты блога)
+- BLOG_POST_CREATE: Создание поста блога (ключевые слова: создать пост блога)
+- BLOG_POST_UPDATE: Обновление поста блога (ключевые слова: обновить пост блога)
+- BLOG_POST_PUBLISH: Публикация поста блога (ключевые слова: опубликовать пост блога)
+- CUSTOMER_SEARCH: Поиск клиентов (ключевые слова: клиент, найти клиента)
+- CUSTOMER_VIEW: Просмотр клиента (ключевые слова: профиль клиента)
+- CUSTOMER_UPDATE: Обновление информации о клиенте (ключевые слова: обновить клиента)
+- CUSTOMER_NOTE_ADD: Добавление заметки к клиенту (ключевые слова: добавить заметку клиенту)
+- CUSTOMER_NOTE_VIEW: Просмотр заметок о клиенте (ключевые слова: заметки о клиенте)
+- ANALYTICS_VIEW: Просмотр аналитики/дашборда (ключевые слова: аналитика, дашборд)
+- REPORT_GENERATE: Генерация отчетов (ключевые слова: отчет, создать отчет)
+- HELP: Пользователю нужна помощь (ключевые слова: помощь, что ты умеешь)
+- UNKNOWN: Не удалось определить намерение
+
+Извлекайте параметры, например: sku, orderNumber, email, price, quantity, warehouseId, status и т. д.
+
+Примеры:
+- "Какие новые заказы?" / "Покажи заказы, ожидающие обработки" -> ORDER_SEARCH, params: {status: "PENDING"} или {status: "CONFIRMED"}
+- "Покажи проблемные заказы" -> ORDER_SEARCH (при необходимости вместе с RETURN_REQUEST_VIEW и TICKET_VIEW для полной картины)
+- "Заявки на возврат" / "Список возвратов" -> RETURN_REQUEST_VIEW
+- "Статистика по оплатам за неделю" -> PAYMENT_REQUEST_VIEW, params: {dateFrom: "..."} или REPORT_GENERATE, params: {reportType: "ACCOUNTING"}
+- "Посты блога" / "Что опубликовано в блоге?" -> BLOG_POST_VIEW
+- "Покажи товары для хорошего настроения" -> PRODUCT_SEARCH, params: {brand: "BRAND"}
+- "Измени статус заказа #ORD-12345 на shipped" -> ORDER_UPDATE_STATUS, params: {orderNumber: "ORD-12345", status: "SHIPPED"}
+- "Добавь 10 единиц товара SKU-12345 на склад Москва" -> INVENTORY_ADD, params: {sku: "SKU-12345", quantity: 10, warehouse: "Москва"}`,
+  'gptAssistant.prompts.defaultText.customerIntent': `Вы — система распознавания намерений для клиентского ассистента интернет-магазина.
+
+Проанализируйте сообщение пользователя и определите его намерение. Ответьте JSON-объектом:
+{
+  "intent": "INTENT_TYPE",
+  "confidence": 0.0-1.0,
+  "params": {
+    "key": "value"
+  }
+}
+
+Доступные клиентские намерения:
+- CUSTOMER_PRODUCT_SEARCH: Поиск товаров (ключевые слова: товар, купить)
+- CUSTOMER_PRODUCT_INFO: Информация о товаре (ключевые слова: размеры, материалы, информация о товаре)
+- CUSTOMER_PRODUCT_RECOMMENDATIONS: Рекомендации товаров (ключевые слова: рекомендации, похожее)
+- CUSTOMER_ORDER_TRACK: Отслеживание заказа (ключевые слова: статус заказа, где заказ, отследить заказ)
+- CUSTOMER_ORDER_VIEW: Просмотр деталей заказа (ключевые слова: детали заказа)
+- CUSTOMER_ORDER_HISTORY: История заказов (ключевые слова: история заказов)
+- CUSTOMER_CART_VIEW: Просмотр корзины (ключевые слова: корзина)
+- CUSTOMER_CART_ADD: Добавление в корзину (ключевые слова: добавить в корзину)
+- CUSTOMER_WISHLIST_VIEW: Просмотр избранного (ключевые слова: избранное)
+- CUSTOMER_WISHLIST_ADD: Добавление в избранное (ключевые слова: добавить в избранное)
+- CUSTOMER_DELIVERY_INFO: Информация о доставке (ключевые слова: доставка, сроки доставки)
+- CUSTOMER_PAYMENT_INFO: Информация об оплате (ключевые слова: оплата, способы оплаты)
+- CUSTOMER_STORE_INFO: Информация о магазине (ключевые слова: информация о магазине)
+- CUSTOMER_FAQ: Часто задаваемые вопросы (ключевые слова: часто задаваемые вопросы, FAQ)
+- HELP: Пользователю нужна помощь (ключевые слова: помощь, что ты умеешь)
+- UNKNOWN: Не удалось определить намерение
+
+Извлекайте параметры, например: productId, orderNumber, size, color, category, brand, query, url, path и т. д.
+
+Примеры:
+- "Покажи черные футболки размера M" -> CUSTOMER_PRODUCT_SEARCH, params: {color: "black", size: "M", category: "t-shirts"}
+- "Где мой заказ #ORD-12345?" -> CUSTOMER_ORDER_TRACK, params: {orderNumber: "ORD-12345"}
+- "Сколько стоит доставка в Москву?" -> CUSTOMER_DELIVERY_INFO, params: {city: "Москва"}`,
   'gptAssistant.analytics.title': 'Аналитика GPT Ассистента',
   'gptAssistant.analytics.refresh': 'Обновить',
   'gptAssistant.analytics.totalRequests': 'Всего запросов',

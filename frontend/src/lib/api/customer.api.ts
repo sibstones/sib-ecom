@@ -48,6 +48,7 @@ export interface Order {
   status: string;
   paymentStatus: string;
   paymentMethod?: 'GATEWAY' | 'BANK_TRANSFER' | 'P2P' | 'CASH_ON_DELIVERY' | 'MANAGER_CHAT';
+  paymentGatewayType?: string | null;
   /** ISO code used at checkout (amounts in subtotal/tax/shipping/total are catalog USD). */
   checkoutCurrency?: string;
   checkoutFxRatesSnapshot?: Record<string, number> | null;

@@ -25,6 +25,7 @@
     "init:gpt-assistant": "tsx src/scripts/init-gpt-assistant-settings.ts",
     "init:gpt-assistant-prompts": "tsx src/scripts/init-gpt-assistant-prompts.ts",
     "seed:dev-showcase": "tsx src/scripts/seed-dev-showcase.ts",
+    "seed:ai-conversations": "tsx src/scripts/seed-ai-conversations.ts",
     "init:countries-languages": "tsx src/scripts/init-default-countries-languages.ts",
     "check:admins": "tsx src/scripts/check-admins.ts",
     "reset:inventory": "tsx src/scripts/reset-inventory.ts",

@@ -293,6 +293,7 @@ export class SalesPointService {
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
         paymentMethod: 'BANK_TRANSFER',
+        paymentGatewayType: null,
         checkoutCurrency: 'USD',
         checkoutFxCapturedAt,
         checkoutFxRatesSnapshot,

@@ -26,6 +26,13 @@ export class CustomerService {
     return gateways.some((gateway) => isOnlinePaymentGatewayType(gateway.type));
   }
 
+  private getPrimaryOnlineGatewayType(
+    gateways: Array<{ type?: string | null }>
+  ): string | null {
+    const onlineGateway = gateways.find((gateway) => isOnlinePaymentGatewayType(gateway.type));
+    return onlineGateway ? normalizePaymentGatewayType(onlineGateway.type) : null;
+  }
+
   private getManualFallbackPaymentMethod(
     gateways: Array<{ type?: string | null }>
   ): 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'MANAGER_CHAT' {
@@ -468,7 +475,9 @@ export class CustomerService {
     }
 
     // Determine payment method
-    let paymentMethod: 'GATEWAY' | 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'MANAGER_CHAT' = data.paymentMethod || 'GATEWAY';
+    let paymentMethod: 'GATEWAY' | 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'MANAGER_CHAT' =
+      data.paymentMethod || 'GATEWAY';
+    let paymentGatewayType: string | null = null;
     const pricingCountryCode = normalizeCountryCode(
       shippingAddress.country || data.countryCode
     );
@@ -486,11 +495,15 @@ export class CustomerService {
         
         if (!this.hasOnlineGateway(availableGateways)) {
           paymentMethod = this.getManualFallbackPaymentMethod(availableGateways);
+          paymentGatewayType = null;
+        } else {
+          paymentGatewayType = this.getPrimaryOnlineGatewayType(availableGateways);
         }
       } catch (error) {
         console.error('Error checking payment gateways:', error);
         // Default to bank transfer if check fails
         paymentMethod = 'BANK_TRANSFER';
+        paymentGatewayType = null;
       }
     }
 
@@ -630,6 +643,7 @@ export class CustomerService {
           shippingAddressId: data.shippingAddressId,
           promoCodeId,
           paymentMethod,
+          paymentGatewayType,
           status: OrderStatus.PENDING,
           paymentStatus: PaymentStatus.PENDING,
           checkoutCurrency: currency,
@@ -1010,6 +1024,7 @@ export class CustomerService {
     // Get country and currency from shipping address
     const countryCode = order.shippingAddress?.country || 'US';
     const currency = 'USD'; // Default currency, can be enhanced later
+    let paymentGatewayType: string | null = null;
 
     // Validate payment method availability
     if (data.paymentMethod === 'GATEWAY') {
@@ -1023,6 +1038,7 @@ export class CustomerService {
         if (!this.hasOnlineGateway(availableGateways)) {
           throw new Error('Payment gateway is not available for this country/currency');
         }
+        paymentGatewayType = this.getPrimaryOnlineGatewayType(availableGateways);
       } catch (error) {
         if (error instanceof Error && error.message.includes('not available')) {
           throw error;
@@ -1035,7 +1051,10 @@ export class CustomerService {
     // Update order payment method
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { paymentMethod: data.paymentMethod },
+      data: {
+        paymentMethod: data.paymentMethod,
+        paymentGatewayType: data.paymentMethod === 'GATEWAY' ? paymentGatewayType : null,
+      },
       include: {
         items: {
           include: {

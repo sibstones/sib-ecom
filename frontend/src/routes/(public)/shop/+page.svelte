@@ -123,6 +123,7 @@
   let totalPages = data.pagination.totalPages ?? 1;
   let total = data.pagination.total ?? 0;
   const limit = 20;
+  const maxApiLimit = 100;
   let viewAllMode = false;
 
   // Sort (order matters for price: asc = low→high, desc = high→low)
@@ -848,6 +849,39 @@
         order: sortOrder,
       };
 
+      async function loadAllProductsForViewAll() {
+        const aggregatedProducts: Product[] = [];
+        let pageToLoad = 1;
+        let totalPagesToLoad = 1;
+        let paginationTotal = 0;
+
+        while (pageToLoad <= totalPagesToLoad) {
+          const response = await productApi.getAll(pageToLoad, maxApiLimit, filters, sort, {
+            imagesLimit: 10,
+          });
+
+          const normalizedBatch = (response.products ?? []).map((p) => ({
+            ...p,
+            images: Array.isArray(p.images) ? [...p.images] : [],
+          }));
+
+          aggregatedProducts.push(...normalizedBatch);
+          paginationTotal = response.pagination.total;
+          totalPagesToLoad = response.pagination.totalPages;
+
+          if ((response.products?.length ?? 0) === 0) {
+            break;
+          }
+
+          pageToLoad += 1;
+        }
+
+        return {
+          products: aggregatedProducts,
+          total: paginationTotal,
+        };
+      }
+
       console.log('Loading products with filters:', {
         categoryId: filters.categoryId,
         selectedCategory,
@@ -858,24 +892,33 @@
         viewAllMode,
       });
 
-      // If viewAllMode is enabled, load all products
-      const pageToLoad = viewAllMode ? 1 : currentPage;
-      const limitToUse = viewAllMode ? 1000 : limit; // Load up to 1000 products in view all mode
+      let normalizedProducts: Product[] = [];
+      let responseTotal = 0;
+      let responseTotalPages = 1;
 
-      // Request more gallery media so mobile cards can swipe through product images.
-      const response = await productApi.getAll(pageToLoad, limitToUse, filters, sort, {
-        imagesLimit: 10,
-      });
-      // Normalize: images is always an array (API returns up to 2 elements for the list)
-      const normalizedProducts = (response.products ?? []).map((p) => ({
-        ...p,
-        images: Array.isArray(p.images) ? [...p.images] : [],
-      }));
+      if (viewAllMode) {
+        const viewAllResponse = await loadAllProductsForViewAll();
+        normalizedProducts = viewAllResponse.products;
+        responseTotal = viewAllResponse.total;
+      } else {
+        const response = await productApi.getAll(currentPage, limit, filters, sort, {
+          imagesLimit: 10,
+        });
+        normalizedProducts = (response.products ?? []).map((p) => ({
+          ...p,
+          images: Array.isArray(p.images) ? [...p.images] : [],
+        }));
+        responseTotal = response.pagination.total;
+        responseTotalPages = response.pagination.totalPages;
+      }
+
       products = normalizedProducts.filter(matchesSelectedInventoryStatus);
-      total = selectedInventoryStatus ? products.length : response.pagination.total;
-      totalPages = selectedInventoryStatus
-        ? Math.max(1, Math.ceil(total / limitToUse))
-        : response.pagination.totalPages;
+      total = selectedInventoryStatus ? products.length : responseTotal;
+      totalPages = viewAllMode
+        ? 1
+        : selectedInventoryStatus
+          ? Math.max(1, Math.ceil(total / limit))
+          : responseTotalPages;
 
       const withTwo = products.filter((p) => (p.images?.length ?? 0) >= 2);
       if (import.meta.env.DEV) {

@@ -195,11 +195,8 @@
       class="flex w-full items-center justify-center bg-[#fcfaf7] px-6 py-10 sm:px-10 lg:max-w-[540px] lg:px-12 xl:px-16"
       style={loginPanelStyle}
     >
-      <div class="w-full max-w-md">
+        <div class="w-full max-w-md">
         <div class="mb-8">
-          <p class="mb-3 text-xs font-medium uppercase tracking-[0.32em] text-[#8f7563]">
-            Welcome back
-          </p>
           <h1 class="mb-2 text-4xl font-bold text-black">{t('auth.login')}</h1>
           <p class="text-gray-600">
             {loginStep === 'twoFactor' ? t('auth.twoFactorHint') : t('auth.signInToAccount')}

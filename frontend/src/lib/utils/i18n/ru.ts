@@ -3556,12 +3556,18 @@ export const ru: Record<string, string> = {
   'managerChat.message.greeting': 'Здравствуйте! Хочу оплатить заказ {orderNumber} через чат.',
   'managerChat.message.order': 'Заказ: {orderNumber}',
   'managerChat.message.total': 'Итого: {total}',
+  'managerChat.message.totalPriceOnRequest': 'Итого: Цена по запросу',
+  'managerChat.message.totalPartial': 'Итого: {total} (без позиций «цена по запросу»)',
+  'managerChat.message.priceOnRequestNote':
+    'Позиции «цена по запросу» будут рассчитаны менеджером отдельно.',
   'managerChat.message.customer': 'Покупатель: {name}',
   'managerChat.message.phone': 'Телефон: {phone}',
   'managerChat.message.shipping': 'Доставка: {address}',
   'managerChat.message.notes': 'Комментарий: {notes}',
   'managerChat.message.items': 'Товары:',
   'managerChat.message.itemLine': '- {name} x{quantity}{sizePart}',
+  'managerChat.message.itemLinePriceOnRequest':
+    '- {name} x{quantity}{sizePart} — Цена по запросу',
   'managerChat.message.sizeSuffix': ', размер: {size}',
   'managerChat.message.orderPage': 'Страница заказа: {url}',
 

@@ -62,3 +62,44 @@ export function getFirstMedia(images: ImageLike[] | null | undefined): ImageLike
   if (!images?.length) return undefined;
   return images[0];
 }
+
+/** Primary catalog card images loaded eagerly (first visible row). */
+export const CATALOG_EAGER_IMAGE_COUNT = 2;
+
+export type MediaLoadStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
+export function getCatalogPrimaryImageLoading(index: number): {
+  eager: boolean;
+  loading: 'lazy' | 'eager';
+  fetchPriority: 'high' | 'low' | 'auto';
+} {
+  if (index < CATALOG_EAGER_IMAGE_COUNT) {
+    return { eager: true, loading: 'eager', fetchPriority: 'high' };
+  }
+
+  return { eager: false, loading: 'lazy', fetchPriority: 'low' };
+}
+
+export function getSecondaryMediaKey(productId: string, url: string): string {
+  return `${productId}:${url}`;
+}
+
+export function getSecondaryMediaStatus(
+  statusByKey: Record<string, MediaLoadStatus>,
+  productId: string,
+  url: string
+): MediaLoadStatus {
+  return statusByKey[getSecondaryMediaKey(productId, url)] ?? 'idle';
+}
+
+export function setSecondaryMediaStatus(
+  statusByKey: Record<string, MediaLoadStatus>,
+  productId: string,
+  url: string,
+  status: MediaLoadStatus
+): Record<string, MediaLoadStatus> {
+  return {
+    ...statusByKey,
+    [getSecondaryMediaKey(productId, url)]: status,
+  };
+}

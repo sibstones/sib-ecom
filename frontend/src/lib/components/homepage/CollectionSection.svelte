@@ -2,7 +2,12 @@
   import type { HomepageSection } from '$lib/api/homepage.api';
   import type { Product } from '$lib/api/product.api';
   import { formatPrice } from '$lib/utils/price.utils';
-  import { getProductImageAlt } from '$lib/utils/image.utils';
+  import {
+    getCatalogPrimaryImageLoading,
+    getProductImageAlt,
+    getSecondaryMediaStatus,
+    setSecondaryMediaStatus,
+  } from '$lib/utils/image.utils';
   import { currencyStore } from '$lib/stores/currency.store';
   import { settingsStore } from '$lib/stores/settings.store';
   import { cartStore } from '$lib/stores/cart.store';
@@ -51,7 +56,23 @@
   $: shopGridClass = `grid ${gridColsClassMap[shopGridColumns] || gridColsClassMap['4']} ${gridGapClassMap[shopGridGap] || 'gap-6'}`;
 
   let hoveredCardIndex: number | null = null;
+  let secondaryMediaStatusByKey: Record<string, 'idle' | 'loading' | 'loaded' | 'error'> = {};
   let quickViewProduct: Product | null = null;
+
+  function handleSecondaryMediaStateChange(
+    productId: string,
+    url: string,
+    event: CustomEvent<{ src: string; status: 'idle' | 'loading' | 'loaded' | 'error' }>
+  ) {
+    if (event.detail.src !== url) return;
+
+    secondaryMediaStatusByKey = setSecondaryMediaStatus(
+      secondaryMediaStatusByKey,
+      productId,
+      url,
+      event.detail.status
+    );
+  }
 
   function isVideoUrl(url: string): boolean {
     if (!url) return false;
@@ -82,7 +103,13 @@
           {@const isCardHovered = hoveredCardIndex === index}
           {@const images = Array.isArray(product.images) ? product.images : []}
           {@const hasSecondImage = images.length > 1 && shopCardHoverImage}
-          {@const showSecondImage = hasSecondImage && isCardHovered}
+          {@const secondImageUrl = hasSecondImage && images[1] ? images[1].url : ''}
+          {@const secondImageLoaded = secondImageUrl
+            ? getSecondaryMediaStatus(secondaryMediaStatusByKey, product.id, secondImageUrl) ===
+              'loaded'
+            : false}
+          {@const showSecondImage = hasSecondImage && isCardHovered && secondImageLoaded}
+          {@const primaryImageLoading = getCatalogPrimaryImageLoading(index)}
           <a
             href="/shop/product/{product.slug}"
             class="group block"
@@ -124,10 +151,14 @@
                       shopCardHoverAnimation === 'scale'
                         ? 'group-hover:scale-105'
                         : ''}"
-                      eager={index < 4}
+                      eager={primaryImageLoading.eager}
+                      loading={primaryImageLoading.loading}
+                      fetchPriority={primaryImageLoading.fetchPriority}
+                      catalogQueue={true}
+                      catalogQueuePriority={primaryImageLoading.eager ? 'high' : 'normal'}
                     />
                   </div>
-                  {#if hasSecondImage && images[1]}
+                  {#if hasSecondImage && images[1] && isCardHovered}
                     <div
                       class="shop-card-second-img absolute inset-0 pointer-events-none"
                       style={showSecondImage ? 'opacity: 1 !important;' : ''}
@@ -136,8 +167,10 @@
                         src={images[1].url}
                         alt={getProductImageAlt(images[1].alt, product.name)}
                         className="w-full h-full object-cover"
-                        loading="lazy"
+                        loading="eager"
                         fetchPriority="low"
+                        on:loadstatechange={(event) =>
+                          handleSecondaryMediaStateChange(product.id, images[1].url, event)}
                       />
                     </div>
                   {/if}
@@ -289,11 +322,5 @@
   }
   :global(.shop-card-first-img.has-second-img) {
     transition: opacity 0.3s ease-in-out;
-  }
-  :global(a.group:hover .shop-card-second-img) {
-    opacity: 1 !important;
-  }
-  :global(a.group:hover .shop-card-first-img.has-second-img) {
-    opacity: 0 !important;
   }
 </style>

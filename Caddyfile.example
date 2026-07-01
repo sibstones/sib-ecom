@@ -1,0 +1,23 @@
+# VPS / App Platform — Caddy in front of Docker frontend (port 8080).
+# Copy and adapt; not used automatically by docker-compose.
+
+shisterov.to {
+	encode gzip
+
+	reverse_proxy localhost:8080 {
+		# Stream /api/media without buffering (images + video range requests)
+		flush_interval -1
+
+		transport http {
+			read_timeout 5m
+			write_timeout 5m
+			dial_timeout 30s
+		}
+	}
+}
+
+# Notes:
+# - Chrome opens many parallel requests; same-origin /api/media uses HTTP/2 on this host.
+# - Do NOT put s3.twcstorage.ru behind this Caddy — browser should never hit S3 directly on storefront.
+# - MINIO_PUBLIC_URL must match the public bucket URL (e.g. https://s3<domain>.com <bucket-uuid>).
+# - If Timeweb panel adds its own proxy, enable long timeouts there too for /api/media/*.

@@ -43,24 +43,58 @@ function buildOrderUrl(orderId: string): string {
   return `${window.location.origin}/account/orders/${orderId}`;
 }
 
+const MESSAGE_SECTION_DIVIDER = '───────────────';
+
 function buildTelegramDraftText(order: Order, languageCode: string): string {
   return buildOrderMessage(order, languageCode);
 }
 
+function isPriceOnRequestItem(item: Order['items'][number]): boolean {
+  return Boolean(item.product?.priceOnRequest) || item.price == null;
+}
+
+function orderHasPriceOnRequestItems(order: Order): boolean {
+  return order.items.some(isPriceOnRequestItem);
+}
+
+function buildManagerChatItemLine(item: Order['items'][number], lang: string): string {
+  const sizePart = item.size
+    ? translateManagerChatMessage('managerChat.message.sizeSuffix', lang, { size: item.size })
+    : '';
+  const key = isPriceOnRequestItem(item)
+    ? 'managerChat.message.itemLinePriceOnRequest'
+    : 'managerChat.message.itemLine';
+
+  return translateManagerChatMessage(key, lang, {
+    name: item.product.name,
+    quantity: item.quantity,
+    sizePart,
+  });
+}
+
+function buildManagerChatTotalLine(order: Order, lang: string): string {
+  const hasPriceOnRequestItems = orderHasPriceOnRequestItems(order);
+  const total = order.total || 0;
+
+  if (hasPriceOnRequestItems && total <= 0) {
+    return translateManagerChatMessage('managerChat.message.totalPriceOnRequest', lang);
+  }
+
+  if (hasPriceOnRequestItems) {
+    return translateManagerChatMessage('managerChat.message.totalPartial', lang, {
+      total: formatOrderAmount(total, order),
+    });
+  }
+
+  return translateManagerChatMessage('managerChat.message.total', lang, {
+    total: formatOrderAmount(total, order),
+  });
+}
+
 function buildOrderMessage(order: Order, languageCode?: string): string {
   const lang = resolveManagerChatLanguage(languageCode);
-  const itemLines = order.items
-    .map((item) => {
-      const sizePart = item.size
-        ? translateManagerChatMessage('managerChat.message.sizeSuffix', lang, { size: item.size })
-        : '';
-      return translateManagerChatMessage('managerChat.message.itemLine', lang, {
-        name: item.product.name,
-        quantity: item.quantity,
-        sizePart,
-      });
-    })
-    .join('\n');
+  const hasPriceOnRequestItems = orderHasPriceOnRequestItems(order);
+  const itemLines = order.items.map((item) => buildManagerChatItemLine(item, lang)).join('\n');
 
   const customerName = [order.shippingAddress?.firstName, order.shippingAddress?.lastName]
     .filter(Boolean)
@@ -78,12 +112,14 @@ function buildOrderMessage(order: Order, languageCode?: string): string {
       orderNumber: order.orderNumber,
     }),
     '',
+    MESSAGE_SECTION_DIVIDER,
     translateManagerChatMessage('managerChat.message.order', lang, {
       orderNumber: order.orderNumber,
     }),
-    translateManagerChatMessage('managerChat.message.total', lang, {
-      total: formatOrderAmount(order.total || 0, order),
-    }),
+    buildManagerChatTotalLine(order, lang),
+    hasPriceOnRequestItems
+      ? translateManagerChatMessage('managerChat.message.priceOnRequestNote', lang)
+      : '',
     customerName
       ? translateManagerChatMessage('managerChat.message.customer', lang, { name: customerName })
       : '',
@@ -101,6 +137,7 @@ function buildOrderMessage(order: Order, languageCode?: string): string {
       ? translateManagerChatMessage('managerChat.message.notes', lang, { notes: order.notes })
       : '',
     '',
+    MESSAGE_SECTION_DIVIDER,
     translateManagerChatMessage('managerChat.message.items', lang),
     itemLines || '-',
     '',

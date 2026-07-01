@@ -3302,12 +3302,18 @@ export const zh: Record<string, string> = {
   'managerChat.message.greeting': 'Hello! I want to pay order {orderNumber} via chat.',
   'managerChat.message.order': 'Order: {orderNumber}',
   'managerChat.message.total': 'Total: {total}',
+  'managerChat.message.totalPriceOnRequest': 'Total: Price on Request',
+  'managerChat.message.totalPartial': 'Total: {total} (excl. price on request items)',
+  'managerChat.message.priceOnRequestNote':
+    'Price on request items will be quoted separately by a manager.',
   'managerChat.message.customer': 'Customer: {name}',
   'managerChat.message.phone': 'Phone: {phone}',
   'managerChat.message.shipping': 'Shipping: {address}',
   'managerChat.message.notes': 'Notes: {notes}',
   'managerChat.message.items': 'Items:',
   'managerChat.message.itemLine': '- {name} x{quantity}{sizePart}',
+  'managerChat.message.itemLinePriceOnRequest':
+    '- {name} x{quantity}{sizePart} — Price on Request',
   'managerChat.message.sizeSuffix': ', size: {size}',
   'managerChat.message.orderPage': 'Order page: {url}',
 

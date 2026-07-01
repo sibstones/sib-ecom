@@ -16,8 +16,14 @@ export class ProductController {
       const filters: ProductFilters = {};
       if (req.query.categoryId) filters.categoryId = req.query.categoryId as string;
       if (req.query.brandId) filters.brandId = req.query.brandId as string;
-      if (req.query.minPrice) filters.minPrice = parseFloat(req.query.minPrice as string);
-      if (req.query.maxPrice) filters.maxPrice = parseFloat(req.query.maxPrice as string);
+      if (req.query.minPrice) {
+        const minPrice = parseFloat(req.query.minPrice as string);
+        if (Number.isFinite(minPrice)) filters.minPrice = minPrice;
+      }
+      if (req.query.maxPrice) {
+        const maxPrice = parseFloat(req.query.maxPrice as string);
+        if (Number.isFinite(maxPrice)) filters.maxPrice = maxPrice;
+      }
       if (req.query.isActive !== undefined) filters.isActive = req.query.isActive === 'true';
       if (req.query.isFeatured !== undefined) filters.isFeatured = req.query.isFeatured === 'true';
       if (req.query.search) filters.search = req.query.search as string;

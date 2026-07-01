@@ -250,7 +250,9 @@ const createAuthStore = () => {
     },
     checkAuth: async () => {
       try {
-        const response = await apiClient.get<{ user: User }>('/auth/me');
+        const response = await apiClient.get<{ user: User }>('/auth/me', {
+          refreshOnMissingToken: false,
+        });
         const updatedState = {
           user: response.user,
           isAuthenticated: true,

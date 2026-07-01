@@ -39,6 +39,7 @@
     "backup:s3": "tsx src/scripts/backup-s3.ts",
     "restore:s3": "tsx src/scripts/restore-s3.ts",
     "list:s3-backups": "tsx src/scripts/list-s3-backups.ts",
+    "diagnose:storage-urls": "tsx scripts/diagnose-storage-urls.ts",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
     "test": "jest",

@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { lookbookController } from '../controllers/lookbook.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
-import { uploadSingle, uploadMultiple, handleUploadError } from '../middleware/upload.middleware';
+import {
+  uploadSingleImageOrVideo,
+  uploadMultipleImageOrVideo,
+  handleUploadError,
+} from '../middleware/upload.middleware';
 import { uploadLimiter } from '../middleware/rate-limit.middleware';
 import { z } from 'zod';
 import { validate } from '../middleware/validation.middleware';
@@ -35,8 +39,9 @@ const updateLookbookSchema = z.object({
 const createImageSchema = z.object({
   body: z.object({
     lookbookId: z.string().uuid(),
+    url: z.string().url().optional(),
     alt: z.string().optional(),
-    order: z.string().optional(),
+    order: z.union([z.string(), z.number()]).optional(),
   }),
 });
 
@@ -104,7 +109,7 @@ router.post(
   uploadLimiter,
   authenticate,
   authorize('ADMIN', 'SUPER_ADMIN'),
-  uploadSingle,
+  uploadSingleImageOrVideo,
   handleUploadError,
   validate(createImageSchema),
   lookbookController.addImage.bind(lookbookController)
@@ -122,7 +127,7 @@ router.post(
   uploadLimiter,
   authenticate,
   authorize('ADMIN', 'SUPER_ADMIN'),
-  uploadMultiple,
+  uploadMultipleImageOrVideo,
   handleUploadError,
   validate(createMultipleImagesSchema),
   lookbookController.addMultipleImages.bind(lookbookController)

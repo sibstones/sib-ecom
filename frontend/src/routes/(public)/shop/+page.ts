@@ -38,6 +38,12 @@ function parseShopDefaultInventoryStatus(value: string | null | undefined): Inve
   return isInventoryStatus(normalizedValue) ? normalizedValue : '';
 }
 
+function parseOptionalPrice(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function normalizeProducts(products: Product[]): Product[] {
   return (products ?? []).map((product) => ({
     ...product,
@@ -149,11 +155,26 @@ function extractAvailableFilters(products: Product[]) {
       countries.add(product.countryOfOrigin);
     }
 
-    if (product.sizes?.CLOTHING?.length) {
-      for (const size of product.sizes.CLOTHING) {
-        if (isInternationalClothingSize(size)) {
-          sizes.add(normalizeInternationalSize(size));
-        }
+    const productSizes = product.sizes;
+    const simpleSizeGroups = [
+      ...(productSizes?.CLOTHING ?? []),
+      ...(productSizes?.SHOES ?? []),
+      ...(productSizes?.VOLUME ?? []),
+      ...(productSizes?.WEIGHT ?? []),
+    ];
+
+    for (const size of simpleSizeGroups) {
+      const trimmedSize = String(size).trim();
+      if (trimmedSize) {
+        sizes.add(isInternationalClothingSize(trimmedSize) ? normalizeInternationalSize(trimmedSize) : trimmedSize);
+      }
+    }
+
+    for (const size of productSizes?.CUSTOM ?? []) {
+      const value = typeof size === 'object' && size?.value ? size.value : String(size);
+      const trimmedSize = value.trim();
+      if (trimmedSize) {
+        sizes.add(trimmedSize);
       }
     }
   }
@@ -225,8 +246,10 @@ export const load: PageLoad = async ({ fetch, url, depends }) => {
       filters.categoryId = selectedMainCategory.id;
     }
     if (selectedBrand) filters.brandId = selectedBrand;
-    if (minPrice) filters.minPrice = parseFloat(minPrice);
-    if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
+    const parsedMinPrice = parseOptionalPrice(minPrice);
+    const parsedMaxPrice = parseOptionalPrice(maxPrice);
+    if (parsedMinPrice !== undefined) filters.minPrice = parsedMinPrice;
+    if (parsedMaxPrice !== undefined) filters.maxPrice = parsedMaxPrice;
     if (searchQuery) filters.search = searchQuery;
     if (selectedColor) filters.color = selectedColor;
     if (selectedMaterial) filters.material = selectedMaterial;
@@ -240,7 +263,7 @@ export const load: PageLoad = async ({ fetch, url, depends }) => {
       isActive: 'true',
       sortBy: sort.field,
       sortOrder: sort.order,
-      imagesLimit: '10',
+      imagesLimit: '2',
     });
 
     if (filters.categoryId) productParams.set('categoryId', filters.categoryId);

@@ -20,13 +20,16 @@ export class ProductService {
     return quantity - reserved > 0;
   }
 
+  private addAndCondition(where: Prisma.ProductWhereInput, condition: Prisma.ProductWhereInput) {
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : []), condition];
+  }
+
   private async getStorefrontEligibleProductIds(
     inventoryStatus?: ProductFilters['inventoryStatus']
   ): Promise<string[] | null> {
     const inventory = await prisma.inventory.findMany({
       where: {
-        status: { in: [...this.storefrontStatuses] },
-        quantity: { gt: 0 },
+        status: { in: [...this.storefrontStatuses, InventoryStatus.OUT_OF_STOCK] },
       },
       select: {
         productId: true,
@@ -36,30 +39,31 @@ export class ProductService {
       },
     });
 
-    const availableInventory = inventory.filter((item) =>
-      this.hasAvailableInventory(item.quantity, item.reserved)
-    );
-
-    if (!inventoryStatus) {
-      return Array.from(new Set(availableInventory.map((item) => item.productId)));
-    }
-
     const productStatusMap = new Map<
       string,
-      { hasInSale: boolean; hasComingSoon: boolean }
+      { hasInSale: boolean; hasComingSoon: boolean; hasOutOfStock: boolean }
     >();
 
-    for (const item of availableInventory) {
+    for (const item of inventory) {
       const existing = productStatusMap.get(item.productId) ?? {
         hasInSale: false,
         hasComingSoon: false,
+        hasOutOfStock: false,
       };
+      const hasAvailableInventory = this.hasAvailableInventory(item.quantity, item.reserved);
 
-      if (item.status === InventoryStatus.IN_SALE) {
+      if (item.status === InventoryStatus.IN_SALE && hasAvailableInventory) {
         existing.hasInSale = true;
       }
-      if (item.status === InventoryStatus.COMING_SOON) {
+      if (item.status === InventoryStatus.COMING_SOON && hasAvailableInventory) {
         existing.hasComingSoon = true;
+      }
+      if (
+        item.status === InventoryStatus.OUT_OF_STOCK ||
+        (this.storefrontStatuses.includes(item.status as (typeof this.storefrontStatuses)[number]) &&
+          !hasAvailableInventory)
+      ) {
+        existing.hasOutOfStock = true;
       }
 
       productStatusMap.set(item.productId, existing);
@@ -68,13 +72,16 @@ export class ProductService {
     const matchingIds: string[] = [];
 
     for (const [productId, availability] of productStatusMap.entries()) {
-      if (inventoryStatus === 'IN_SALE' && availability.hasInSale) {
+      const isOutOfStock =
+        availability.hasOutOfStock && !availability.hasInSale && !availability.hasComingSoon;
+
+      if (!inventoryStatus && (availability.hasInSale || availability.hasComingSoon || isOutOfStock)) {
         matchingIds.push(productId);
-      } else if (
-        inventoryStatus === 'COMING_SOON' &&
-        availability.hasComingSoon &&
-        !availability.hasInSale
-      ) {
+      } else if (inventoryStatus === 'IN_SALE' && availability.hasInSale) {
+        matchingIds.push(productId);
+      } else if (inventoryStatus === 'COMING_SOON' && availability.hasComingSoon) {
+        matchingIds.push(productId);
+      } else if (inventoryStatus === 'OUT_OF_STOCK' && isOutOfStock) {
         matchingIds.push(productId);
       }
     }
@@ -184,58 +191,97 @@ export class ProductService {
       ];
     }
     
-    // Color filtering: color is JSON (string or array of strings). Use array_contains for arrays, string_contains for legacy.
+    // Color is stored as JSONB array of objects: [{ name, hex }]. Match by visible color name.
     if (filters?.color) {
       const colorFilter = filters.color.trim();
-      const colorCondition: Prisma.ProductWhereInput = {
-        OR: [
-          { color: { path: ['$'], array_contains: [colorFilter] } as any },
-          { color: { string_contains: colorFilter } as any },
-        ],
-      };
-      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), colorCondition];
+      const colorRows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+        SELECT DISTINCT p.id
+        FROM products p
+        WHERE p."hideColor" = false
+          AND p.color IS NOT NULL
+          AND (
+            (
+              jsonb_typeof(p.color) = 'array'
+              AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(p.color) AS elem
+                WHERE lower(trim(elem->>'name')) = lower(${colorFilter})
+              )
+            )
+            OR (
+              jsonb_typeof(p.color) = 'string'
+              AND lower(trim(p.color #>> '{}')) = lower(${colorFilter})
+            )
+          )
+      `);
+      this.addAndCondition(where, { id: { in: colorRows.map((row) => row.id) } });
     }
     
     if (filters?.material) {
-      where.material = { contains: filters.material, mode: 'insensitive' };
+      this.addAndCondition(where, {
+        hideMaterial: false,
+        material: { equals: filters.material.trim(), mode: 'insensitive' },
+      });
     }
     
     if (filters?.countryOfOrigin) {
-      where.countryOfOrigin = { contains: filters.countryOfOrigin, mode: 'insensitive' };
+      this.addAndCondition(where, {
+        hideCountryOfOrigin: false,
+        countryOfOrigin: { equals: filters.countryOfOrigin.trim(), mode: 'insensitive' },
+      });
     }
 
     if (filters?.size) {
       const rawSize = filters.size.trim();
-      if (isInternationalClothingSize(rawSize)) {
-        const sizeFilter = normalizeInternationalSize(rawSize);
-        const sizeJsonNeedle = `"${sizeFilter}"`;
-        const sizeCondition: Prisma.ProductWhereInput = {
-          OR: [
-            {
-              sizes: {
-                path: ['CLOTHING'],
-                array_contains: [sizeFilter],
-              } as Prisma.JsonFilter,
-            },
-            {
-              sizes: {
-                string_contains: sizeJsonNeedle,
-              } as Prisma.JsonFilter,
-            },
-            {
-              variants: {
-                some: {
-                  OR: [
-                    { size: { equals: sizeFilter, mode: 'insensitive' } },
-                    { size: { equals: `CLOTHING:${sizeFilter}`, mode: 'insensitive' } },
-                  ],
-                },
+      const normalizedSize = isInternationalClothingSize(rawSize)
+        ? normalizeInternationalSize(rawSize)
+        : rawSize;
+      const sizeJsonNeedle = `"${normalizedSize}"`;
+      const sizeCondition: Prisma.ProductWhereInput = {
+        OR: [
+          {
+            sizes: {
+              path: ['CLOTHING'],
+              array_contains: [normalizedSize],
+            } as Prisma.JsonFilter,
+          },
+          {
+            sizes: {
+              path: ['SHOES'],
+              array_contains: [rawSize],
+            } as Prisma.JsonFilter,
+          },
+          {
+            sizes: {
+              path: ['VOLUME'],
+              array_contains: [rawSize],
+            } as Prisma.JsonFilter,
+          },
+          {
+            sizes: {
+              path: ['WEIGHT'],
+              array_contains: [rawSize],
+            } as Prisma.JsonFilter,
+          },
+          {
+            sizes: {
+              string_contains: sizeJsonNeedle,
+            } as Prisma.JsonFilter,
+          },
+          {
+            variants: {
+              some: {
+                OR: [
+                  { size: { equals: rawSize, mode: 'insensitive' } },
+                  { size: { equals: normalizedSize, mode: 'insensitive' } },
+                  { size: { equals: `CLOTHING:${normalizedSize}`, mode: 'insensitive' } },
+                ],
               },
             },
-          ],
-        };
-        where.AND = [...(Array.isArray(where.AND) ? where.AND : []), sizeCondition];
-      }
+          },
+        ],
+      };
+      this.addAndCondition(where, sizeCondition);
     }
 
     if (filters?.dateFrom || filters?.dateTo) {
@@ -254,17 +300,7 @@ export class ProductService {
     if ((filters?.isActive === undefined || filters?.isActive === true) && filters?.skipInventoryCheck !== true) {
       const eligibleProductIds = await this.getStorefrontEligibleProductIds(filters?.inventoryStatus);
 
-      if (filters?.inventoryStatus === 'OUT_OF_STOCK') {
-        where.id = {
-          ...(typeof where.id === 'object' && where.id !== null ? where.id : {}),
-          notIn: eligibleProductIds ?? [],
-        };
-      } else {
-        where.id = {
-          ...(typeof where.id === 'object' && where.id !== null ? where.id : {}),
-          in: eligibleProductIds ?? [],
-        };
-      }
+      this.addAndCondition(where, { id: { in: eligibleProductIds ?? [] } });
     }
 
     const orderBy: Prisma.ProductOrderByWithRelationInput = {};

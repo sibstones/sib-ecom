@@ -151,8 +151,8 @@ export const productApi = {
 
     if (filters?.categoryId) params.append('categoryId', filters.categoryId);
     if (filters?.brandId) params.append('brandId', filters.brandId);
-    if (filters?.minPrice) params.append('minPrice', filters.minPrice.toString());
-    if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    if (filters?.minPrice !== undefined) params.append('minPrice', filters.minPrice.toString());
+    if (filters?.maxPrice !== undefined) params.append('maxPrice', filters.maxPrice.toString());
     if (filters?.isActive !== undefined) params.append('isActive', filters.isActive.toString());
     if (filters?.isFeatured !== undefined)
       params.append('isFeatured', filters.isFeatured.toString());

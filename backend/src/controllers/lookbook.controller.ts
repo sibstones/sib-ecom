@@ -95,28 +95,33 @@ export class LookbookController {
   async addImage(req: Request, res: Response): Promise<void> {
     try {
       const file = req.file as Express.Multer.File;
+      const { lookbookId, alt, order, url } = req.body as {
+        lookbookId?: string;
+        alt?: string;
+        order?: string | number;
+        url?: string;
+      };
       
-      if (!file) {
-        res.status(400).json({ error: 'No file uploaded' });
-        return;
-      }
-
-      // Upload file to MinIO
-      const fileUrl = await storageService.uploadFile(file, 'lookbook');
-
-      // Get additional data from request body
-      const { lookbookId, alt, order } = req.body;
-
       if (!lookbookId) {
         res.status(400).json({ error: 'lookbookId is required' });
         return;
       }
 
+      if (!file && !url) {
+        res.status(400).json({ error: 'No file uploaded or URL provided' });
+        return;
+      }
+
+      // Upload file to MinIO, or persist an externally supplied URL.
+      const fileUrl = file ? await storageService.uploadFile(file, 'lookbook') : url!.trim();
+      const parsedOrder =
+        typeof order === 'number' ? order : order ? parseInt(order, 10) : 0;
+
       const data: CreateLookbookImageDto = {
         lookbookId,
         url: fileUrl,
-        alt: alt || file.originalname,
-        order: order ? parseInt(order, 10) : 0,
+        alt: alt || file?.originalname,
+        order: Number.isFinite(parsedOrder) ? parsedOrder : 0,
       };
 
       const image = await lookbookService.addImage(data);

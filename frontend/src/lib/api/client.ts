@@ -8,6 +8,7 @@ type QueryParams = Record<string, string | number | boolean | null | undefined>;
 type ApiRequestOptions = Omit<RequestInit, 'headers'> & {
   headers?: HeadersInit;
   params?: QueryParams;
+  refreshOnMissingToken?: boolean;
 };
 
 // Use relative path to leverage Vite proxy in development
@@ -283,8 +284,11 @@ export class ApiClient {
             'Invalid or expired access token',
             'No token provided',
           ];
+          const shouldRefresh =
+            authErrorMessages.some((msg) => errorMessage.includes(msg)) &&
+            (options.refreshOnMissingToken !== false || !errorMessage.includes('No token provided'));
 
-          if (authErrorMessages.some((msg) => errorMessage.includes(msg))) {
+          if (shouldRefresh) {
             // Try to refresh token and retry the request
             const newToken = await this.refreshTokenIfNeeded();
             if (newToken) {

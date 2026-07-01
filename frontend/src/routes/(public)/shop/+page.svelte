@@ -19,7 +19,13 @@
   import Pagination from '$lib/components/Pagination.svelte';
   import { formatPrice, toPriceNumber } from '$lib/utils/price.utils';
   import { currencyStore } from '$lib/stores/currency.store';
-  import { getProductImageAlt } from '$lib/utils/image.utils';
+  import {
+    getCatalogPrimaryImageLoading,
+    getProductImageAlt,
+    getSecondaryMediaStatus,
+    setSecondaryMediaStatus,
+  } from '$lib/utils/image.utils';
+  import { resolveStorefrontMediaSrc } from '$lib/utils/media-url';
   import { t } from '$lib/utils/i18n';
   import { getErrorMessage } from '$lib/utils/error-handler';
   import { i18nStore } from '$lib/stores/i18n.store';
@@ -368,12 +374,10 @@
     }
   }
 
-  function getSecondaryMediaKey(productId: string, url: string) {
-    return `${productId}:${url}`;
-  }
-
-  function getSecondaryMediaStatus(productId: string, url: string) {
-    return secondaryMediaStatusByKey[getSecondaryMediaKey(productId, url)] ?? 'idle';
+  function parseOptionalPrice(value: string): number | undefined {
+    if (!value.trim()) return undefined;
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 
   function handleSecondaryMediaStateChange(
@@ -385,10 +389,12 @@
       return;
     }
 
-    secondaryMediaStatusByKey = {
-      ...secondaryMediaStatusByKey,
-      [getSecondaryMediaKey(productId, url)]: event.detail.status,
-    };
+    secondaryMediaStatusByKey = setSecondaryMediaStatus(
+      secondaryMediaStatusByKey,
+      productId,
+      url,
+      event.detail.status
+    );
   }
 
   function getCardImageIndex(productId: string, imagesLength: number) {
@@ -736,22 +742,6 @@
     shopHeaderCategories = nextHeaderState.categories;
   }
 
-  function matchesSelectedInventoryStatus(product: Product): boolean {
-    if (!selectedInventoryStatus) {
-      return true;
-    }
-
-    if (selectedInventoryStatus === 'COMING_SOON') {
-      return product.isComingSoon === true;
-    }
-
-    if (selectedInventoryStatus === 'IN_SALE') {
-      return product.isComingSoon !== true;
-    }
-
-    return true;
-  }
-
   function getCategoryPath(category: Category): string {
     const path: string[] = [];
     let currentCategory: Category | undefined = category;
@@ -801,11 +791,30 @@
         if (product.countryOfOrigin && !product.hideCountryOfOrigin) {
           countries.add(product.countryOfOrigin);
         }
-        if (product.sizes?.CLOTHING?.length) {
-          for (const size of product.sizes.CLOTHING) {
-            if (isInternationalClothingSize(size)) {
-              sizes.add(normalizeInternationalSize(size));
-            }
+        const productSizes = product.sizes;
+        const simpleSizeGroups = [
+          ...(productSizes?.CLOTHING ?? []),
+          ...(productSizes?.SHOES ?? []),
+          ...(productSizes?.VOLUME ?? []),
+          ...(productSizes?.WEIGHT ?? []),
+        ];
+
+        for (const size of simpleSizeGroups) {
+          const trimmedSize = String(size).trim();
+          if (trimmedSize) {
+            sizes.add(
+              isInternationalClothingSize(trimmedSize)
+                ? normalizeInternationalSize(trimmedSize)
+                : trimmedSize
+            );
+          }
+        }
+
+        for (const size of productSizes?.CUSTOM ?? []) {
+          const value = typeof size === 'object' && size?.value ? size.value : String(size);
+          const trimmedSize = value.trim();
+          if (trimmedSize) {
+            sizes.add(trimmedSize);
           }
         }
       });
@@ -835,8 +844,10 @@
       }
 
       if (selectedBrand) filters.brandId = selectedBrand;
-      if (minPrice) filters.minPrice = parseFloat(minPrice);
-      if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
+      const parsedMinPrice = parseOptionalPrice(minPrice);
+      const parsedMaxPrice = parseOptionalPrice(maxPrice);
+      if (parsedMinPrice !== undefined) filters.minPrice = parsedMinPrice;
+      if (parsedMaxPrice !== undefined) filters.maxPrice = parsedMaxPrice;
       if (searchQuery) filters.search = searchQuery;
       if (selectedColor) filters.color = selectedColor;
       if (selectedMaterial) filters.material = selectedMaterial;
@@ -857,7 +868,7 @@
 
         while (pageToLoad <= totalPagesToLoad) {
           const response = await productApi.getAll(pageToLoad, maxApiLimit, filters, sort, {
-            imagesLimit: 10,
+            imagesLimit: 2,
           });
 
           const normalizedBatch = (response.products ?? []).map((p) => ({
@@ -902,7 +913,7 @@
         responseTotal = viewAllResponse.total;
       } else {
         const response = await productApi.getAll(currentPage, limit, filters, sort, {
-          imagesLimit: 10,
+          imagesLimit: 2,
         });
         normalizedProducts = (response.products ?? []).map((p) => ({
           ...p,
@@ -912,13 +923,9 @@
         responseTotalPages = response.pagination.totalPages;
       }
 
-      products = normalizedProducts.filter(matchesSelectedInventoryStatus);
-      total = selectedInventoryStatus ? products.length : responseTotal;
-      totalPages = viewAllMode
-        ? 1
-        : selectedInventoryStatus
-          ? Math.max(1, Math.ceil(total / limit))
-          : responseTotalPages;
+      products = normalizedProducts;
+      total = responseTotal;
+      totalPages = viewAllMode ? 1 : responseTotalPages;
 
       const withTwo = products.filter((p) => (p.images?.length ?? 0) >= 2);
       if (import.meta.env.DEV) {
@@ -1457,14 +1464,16 @@
             {#each products as product, index}
               {@const isCardHovered = hoveredCardIndex === index}
               {@const images = Array.isArray(product.images) ? product.images : []}
-              {@const hasSecondImage = images.length > 1}
+              {@const hasSecondImage = images.length > 1 && shopCardHoverImage}
               {@const secondImageUrl = hasSecondImage && images[1] ? images[1].url : ''}
               {@const secondImageLoaded = secondImageUrl
-                ? getSecondaryMediaStatus(product.id, secondImageUrl) === 'loaded'
+                ? getSecondaryMediaStatus(secondaryMediaStatusByKey, product.id, secondImageUrl) ===
+                  'loaded'
                 : false}
               {@const showSecondImage = hasSecondImage && isCardHovered && secondImageLoaded}
               {@const selectedImageIndex = getCardImageIndex(product.id, images.length)}
               {@const selectedImage = images[selectedImageIndex]}
+              {@const primaryImageLoading = getCatalogPrimaryImageLoading(index)}
               <a
                 href="/shop/product/{product.slug}"
                 class="group block"
@@ -1482,7 +1491,7 @@
                   {#if images.length > 0}
                     {#if shopCardVideoSupport && selectedImage && isVideoUrl(selectedImage.url)}
                       <video
-                        src={selectedImage.url}
+                        src={resolveStorefrontMediaSrc(selectedImage.url)}
                         class="w-full h-full object-cover {shopCardHoverAnimation === 'scale' &&
                         selectedImageIndex === 0
                           ? 'group-hover:scale-105 transition-transform duration-300'
@@ -1510,11 +1519,14 @@
                           selectedImageIndex === 0
                             ? 'group-hover:scale-105'
                             : ''}"
-                          eager={index < 4}
+                          eager={primaryImageLoading.eager}
+                          loading={primaryImageLoading.loading}
+                          fetchPriority={primaryImageLoading.fetchPriority}
+                          catalogQueue={true}
+                          catalogQueuePriority={primaryImageLoading.eager ? 'high' : 'normal'}
                         />
                       </div>
-                      <!-- Second image: visibility only through CSS a.group:hover above -->
-                      {#if hasSecondImage && images[1]}
+                      {#if hasSecondImage && images[1] && isCardHovered}
                         <div
                           class="shop-card-second-img absolute inset-0 pointer-events-none"
                           style={showSecondImage ? 'opacity: 1 !important;' : ''}
@@ -1523,7 +1535,7 @@
                             src={images[1].url}
                             alt={getProductImageAlt(images[1].alt, product.name)}
                             className="w-full h-full object-cover"
-                            loading="lazy"
+                            loading="eager"
                             fetchPriority="low"
                             on:loadstatechange={(event) =>
                               handleSecondaryMediaStateChange(product.id, images[1].url, event)}
@@ -1727,11 +1739,5 @@
   }
   :global(.shop-card-first-img.has-second-img) {
     transition: opacity 0.3s ease-in-out;
-  }
-  :global(a.group:hover .shop-card-second-img) {
-    opacity: 1 !important;
-  }
-  :global(a.group:hover .shop-card-first-img.has-second-img) {
-    opacity: 0 !important;
   }
 </style>

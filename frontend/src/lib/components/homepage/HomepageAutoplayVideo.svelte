@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
+  import { resolveStorefrontMediaSrc } from '$lib/utils/media-url';
 
   export let src = '';
   export let className = '';
@@ -14,10 +15,32 @@
 
   let videoElement: HTMLVideoElement | null = null;
   let lastPlaybackKey = '';
+  let playAttemptId = 0;
   let cleanupPageShow: (() => void) | null = null;
   let cleanupVisibilityChange: (() => void) | null = null;
 
-  async function syncPlayback() {
+  $: mediaSrc = resolveStorefrontMediaSrc(src);
+
+  async function attemptAutoplay() {
+    const video = videoElement;
+    if (!video) return;
+    if (!autoplay || !mediaSrc || video.getAttribute('src') !== mediaSrc) return;
+
+    const attemptId = ++playAttemptId;
+
+    try {
+      if (video.paused && video.currentTime > 0 && !video.ended) {
+        video.currentTime = 0;
+      }
+      await video.play();
+    } catch (error) {
+      if (attemptId === playAttemptId) {
+        console.debug('Homepage video autoplay prevented:', error);
+      }
+    }
+  }
+
+  function syncPlayback() {
     const video = videoElement;
     if (!video) return;
 
@@ -40,7 +63,8 @@
       video.removeAttribute('controls');
     }
 
-    if (!src) {
+    if (!mediaSrc) {
+      playAttemptId += 1;
       video.pause();
       video.removeAttribute('src');
       video.load();
@@ -48,29 +72,23 @@
     }
 
     const currentSource = video.getAttribute('src') || '';
-    if (currentSource !== src) {
+    if (currentSource !== mediaSrc) {
+      playAttemptId += 1;
       video.pause();
-      video.setAttribute('src', src);
+      video.setAttribute('src', mediaSrc);
       video.load();
+      return;
     } else if (video.readyState === 0) {
       video.load();
+      return;
     }
 
-    if (!autoplay) return;
-
-    try {
-      if (video.paused && video.currentTime > 0 && !video.ended) {
-        video.currentTime = 0;
-      }
-      await video.play();
-    } catch (error) {
-      console.debug('Homepage video autoplay prevented:', error);
-    }
+    void attemptAutoplay();
   }
 
   $: {
     const nextPlaybackKey = JSON.stringify({
-      src,
+      mediaSrc,
       autoplay,
       loop,
       muted,
@@ -107,6 +125,7 @@
   });
 
   onDestroy(() => {
+    playAttemptId += 1;
     cleanupPageShow?.();
     cleanupVisibilityChange?.();
   });
@@ -127,6 +146,5 @@
   disableremoteplayback={true}
   controlslist="nodownload noplaybackrate nofullscreen noremoteplayback"
   tabindex="-1"
-  on:loadedmetadata={() => void syncPlayback()}
-  on:canplay={() => void syncPlayback()}
+  on:canplay={() => void attemptAutoplay()}
 ></video>

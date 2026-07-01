@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { InventoryStatus, PrismaClient, UserRole } from '@prisma/client';
 import { hashPassword } from '../../utils/hash';
 
 const prisma = new PrismaClient();
@@ -80,8 +80,8 @@ export class TestHelpers {
     variantId?: string;
     quantity: number;
     reserved?: number;
+    status?: InventoryStatus;
   }) {
-    const { InventoryStatus } = await import('@prisma/client');
     return prisma.inventory.create({
       data: {
         warehouseId: data.warehouseId,
@@ -89,7 +89,7 @@ export class TestHelpers {
         variantId: data.variantId,
         quantity: data.quantity,
         reserved: data.reserved || 0,
-        status: InventoryStatus.IN_SALE,
+        status: data.status ? InventoryStatus[data.status] : InventoryStatus.IN_SALE,
       },
     });
   }

@@ -1,27 +1,25 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { authStore } from '$lib/stores/auth.store';
   import { settingsStore } from '$lib/stores/settings.store';
-  import { onMount, onDestroy } from 'svelte';
+  import {
+    acquireCatalogImageSlot,
+    releaseCatalogImageSlot,
+  } from '$lib/utils/catalog-image-queue';
+  import type { MediaLoadStatus } from '$lib/utils/image.utils';
+  import { isProxiedStorefrontMedia, resolveStorefrontMediaSrc } from '$lib/utils/media-url';
 
   export let src: string;
   export let alt: string = '';
   export let className: string = '';
   export let style: string = '';
-  export let loading: 'lazy' | 'eager' = 'lazy'; // Lazy loading
-  export let eager: boolean = false; // For critical images
+  export let loading: 'lazy' | 'eager' = 'lazy';
+  export let eager: boolean = false;
   export let fetchPriority: 'high' | 'low' | 'auto' = 'auto';
   export let decoding: 'sync' | 'async' | 'auto' = 'async';
-
-  let imageElement: HTMLImageElement;
-  let videoElement: HTMLVideoElement;
-  let containerElement: HTMLDivElement;
-  let isLoaded = false;
-  let isLoading = false;
-  let observer: IntersectionObserver | null = null;
-  let imageSrc = '';
-  let isMounted = false;
-  let previousSrc = '';
+  /** Throttle direct S3 fetches when same-origin /api/media proxy is unavailable. */
+  export let catalogQueue: boolean = false;
+  export let catalogQueuePriority: 'high' | 'normal' = 'normal';
 
   const dispatch = createEventDispatcher<{
     loadstatechange: {
@@ -31,151 +29,162 @@
   }>();
 
   const VIDEO_EXT = /\.(mp4|webm|mov|ogg)(\?|#|$)/i;
-  $: isVideoUrl = typeof src === 'string' && VIDEO_EXT.test(src);
+  const LOAD_TIMEOUT_MS = 25_000;
 
+  $: mediaSrc = resolveStorefrontMediaSrc(src);
+  $: useCatalogQueue = catalogQueue && !isProxiedStorefrontMedia(mediaSrc);
+  $: isVideoUrl = typeof mediaSrc === 'string' && VIDEO_EXT.test(mediaSrc);
   $: isAuthenticated = $authStore.isAuthenticated;
   $: blurEnabled = $settingsStore.imageBlurEnabled ?? false;
   $: shouldBlur = blurEnabled && !isAuthenticated;
   $: isBlurred = shouldBlur;
-  $: shouldLoadEagerly = eager || loading === 'eager';
-  $: imageFetchPriority = shouldLoadEagerly && fetchPriority === 'auto' ? 'high' : fetchPriority;
+  $: effectiveLoading = eager ? 'eager' : loading;
+  $: imageFetchPriority = eager && fetchPriority === 'auto' ? 'high' : fetchPriority;
 
-  function emitLoadState(status: 'idle' | 'loading' | 'loaded' | 'error') {
-    dispatch('loadstatechange', {
-      src,
-      status,
-    });
+  let root: HTMLDivElement | null = null;
+  let isVisible = false;
+  let hasQueueSlot = false;
+  let hasLoaded = false;
+  let hasErrored = false;
+  let displaySrc = '';
+  let observer: IntersectionObserver | null = null;
+  let lastSrc = '';
+  let loadTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  $: if (src !== lastSrc) {
+    lastSrc = src;
+    hasLoaded = false;
+    hasErrored = false;
+    displaySrc = '';
+    clearLoadTimeout();
+    releaseSlot();
   }
 
-  function resetMediaState() {
-    isLoaded = false;
-    isLoading = false;
-    imageSrc = shouldLoadEagerly && !isVideoUrl ? src : '';
-    emitLoadState('idle');
+  $: if (!useCatalogQueue) {
+    displaySrc = mediaSrc;
+  } else if ((hasLoaded || hasErrored) && mediaSrc) {
+    displaySrc = mediaSrc;
+  } else if (isVisible && hasQueueSlot && mediaSrc) {
+    displaySrc = mediaSrc;
+  } else if (!mediaSrc) {
+    displaySrc = '';
+  }
+
+  function getLoadStatus(): MediaLoadStatus {
+    if (!src) return 'idle';
+    if (hasLoaded) return 'loaded';
+    if (hasErrored) return 'error';
+    if (displaySrc) return 'loading';
+    return 'idle';
+  }
+
+  $: dispatch('loadstatechange', { src, status: getLoadStatus() });
+
+  function clearLoadTimeout() {
+    if (loadTimeoutId !== null) {
+      clearTimeout(loadTimeoutId);
+      loadTimeoutId = null;
+    }
+  }
+
+  function startLoadTimeout() {
+    clearLoadTimeout();
+    if (!useCatalogQueue || !displaySrc) return;
+
+    loadTimeoutId = setTimeout(() => {
+      if (!hasLoaded && !hasErrored) {
+        hasErrored = true;
+        releaseSlot();
+        dispatch('loadstatechange', { src, status: 'error' });
+      }
+    }, LOAD_TIMEOUT_MS);
+  }
+
+  function releaseSlot() {
+    if (!hasQueueSlot) return;
+    hasQueueSlot = false;
+    releaseCatalogImageSlot();
+  }
+
+  async function requestSlot() {
+    if (hasQueueSlot || hasLoaded || hasErrored || !useCatalogQueue || !isVisible || !mediaSrc) {
+      return;
+    }
+
+    await acquireCatalogImageSlot(catalogQueuePriority);
+    if (!useCatalogQueue || !isVisible || !mediaSrc || hasLoaded || hasErrored) {
+      releaseCatalogImageSlot();
+      return;
+    }
+
+    hasQueueSlot = true;
+  }
+
+  $: if (useCatalogQueue && isVisible && mediaSrc && !hasQueueSlot && !hasLoaded && !hasErrored) {
+    void requestSlot();
+  }
+
+  $: if (!isVisible && useCatalogQueue && hasQueueSlot && !hasLoaded && !hasErrored) {
+    releaseSlot();
+    displaySrc = '';
+  }
+
+  $: if (displaySrc && useCatalogQueue && !hasLoaded && !hasErrored) {
+    startLoadTimeout();
   }
 
   function handleImageClick() {
     if (shouldBlur && !$authStore.isAuthenticated) {
-      // Redirect to login with return URL
       const currentPath = window.location.pathname + window.location.search;
       window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
     }
   }
 
-  function handleImageLoad() {
-    isLoaded = true;
-    isLoading = false;
-    emitLoadState('loaded');
+  function handleLoad() {
+    clearLoadTimeout();
+    hasLoaded = true;
+    releaseSlot();
+    dispatch('loadstatechange', {
+      src,
+      status: 'loaded',
+    });
   }
 
-  function handleImageError() {
-    isLoading = false;
-    isLoaded = false;
-    emitLoadState('error');
-    console.error('Failed to load image:', src);
-  }
-
-  function loadImage() {
-    if (!isLoaded && !isLoading && src && !isVideoUrl) {
-      isLoading = true;
-      imageSrc = src;
-      emitLoadState('loading');
-      // Check that src is a valid URL
-      if (!src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
-        console.warn('Invalid image src format:', src);
-      }
-    }
-  }
-
-  function handleVideoLoaded() {
-    isLoaded = true;
-    isLoading = false;
-    emitLoadState('loaded');
-  }
-
-  function handleVideoError() {
-    isLoading = false;
-    isLoaded = false;
-    emitLoadState('error');
-  }
-
-  function observeContainer() {
-    if (typeof IntersectionObserver === 'undefined') {
-      loadImage();
-      return;
-    }
-
-    if (!containerElement) {
-      loadImage();
-      return;
-    }
-
-    if (!observer) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !isLoaded && !isLoading && src) {
-              loadImage();
-              observer?.unobserve(containerElement);
-            }
-          });
-        },
-        {
-          rootMargin: '300px',
-          threshold: 0.01,
-        }
-      );
-    }
-
-    observer.observe(containerElement);
-  }
-
-  $: if (src !== previousSrc) {
-    previousSrc = src;
-    resetMediaState();
-
-    if (isMounted) {
-      if (isVideoUrl) {
-        isLoading = !!src;
-        emitLoadState(src ? 'loading' : 'idle');
-      } else if (shouldLoadEagerly && src) {
-        loadImage();
-      } else if (src) {
-        observeContainer();
-      }
-    }
+  function handleError() {
+    clearLoadTimeout();
+    hasErrored = true;
+    releaseSlot();
+    dispatch('loadstatechange', {
+      src,
+      status: 'error',
+    });
+    console.error('Failed to load image:', mediaSrc);
   }
 
   onMount(() => {
-    isMounted = true;
+    if (!useCatalogQueue || !root) return;
 
-    if (isVideoUrl) {
-      isLoaded = false;
-      isLoading = true;
-      emitLoadState(src ? 'loading' : 'idle');
-      return;
-    }
-    // If the image should be loaded eagerly, load it
-    if (shouldLoadEagerly && src) {
-      loadImage();
-      return;
-    }
-
-    observeContainer();
+    observer = new IntersectionObserver(
+      (entries) => {
+        isVisible = entries.some((entry) => entry.isIntersecting);
+      },
+      { rootMargin: '250px 0px', threshold: 0.01 }
+    );
+    observer.observe(root);
   });
 
   onDestroy(() => {
-    if (observer) {
-      observer.disconnect();
-    }
+    observer?.disconnect();
+    observer = null;
+    clearLoadTimeout();
+    releaseSlot();
   });
 </script>
 
 <div
-  bind:this={containerElement}
+  bind:this={root}
   class="relative w-full h-full overflow-hidden {className}"
   class:blur-container={shouldBlur}
-  class:loading-placeholder={!isLoaded}
   {style}
   on:click={handleImageClick}
   role={shouldBlur ? 'button' : 'presentation'}
@@ -187,52 +196,40 @@
     }
   }}
 >
-  {#if !isLoaded}
-    <div class="absolute inset-0 shimmer-gradient" aria-hidden="true"></div>
-  {/if}
-
   {#if isVideoUrl}
     <video
-      bind:this={videoElement}
-      {src}
-      class="blurred-media w-full h-full object-cover object-center transition-all duration-700 ease-out"
+      src={displaySrc}
+      class="blurred-media w-full h-full object-cover object-center"
       class:blurred={isBlurred}
-      class:opacity-0={!isLoaded}
-      class:opacity-100={isLoaded}
       muted
       loop
       playsinline
       autoplay
       draggable="false"
-      on:loadeddata={handleVideoLoaded}
-      on:error={handleVideoError}
+      on:loadeddata={handleLoad}
+      on:error={handleError}
       aria-label={alt}
     ></video>
-  {:else}
+  {:else if displaySrc}
     <img
-      bind:this={imageElement}
-      src={imageSrc}
+      src={displaySrc}
       {alt}
-      loading={shouldLoadEagerly ? 'eager' : 'lazy'}
+      loading={effectiveLoading}
       fetchpriority={imageFetchPriority}
       {decoding}
-      class="blurred-media w-full h-full object-cover object-center transition-all duration-700 ease-out"
+      class="blurred-media w-full h-full object-cover object-center"
       class:blurred={isBlurred}
-      class:opacity-0={!isLoaded && !shouldLoadEagerly}
-      class:opacity-100={isLoaded || shouldLoadEagerly}
       draggable="false"
-      on:load={handleImageLoad}
-      on:error={handleImageError}
+      on:load={handleLoad}
+      on:error={handleError}
     />
   {/if}
 
   {#if shouldBlur && !$authStore.isAuthenticated}
     <div
-      class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm transition-opacity duration-700 z-10"
+      class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-10"
     >
-      <div
-        class="text-center px-6 py-4 bg-white/90 backdrop-blur-md rounded-lg shadow-lg transform transition-all duration-500 hover:scale-105"
-      >
+      <div class="text-center px-6 py-4 bg-white/90 backdrop-blur-md rounded-lg shadow-lg">
         <svg
           class="w-12 h-12 mx-auto mb-3 text-black/70"
           fill="none"
@@ -269,50 +266,5 @@
 
   .blur-container:active .blurred {
     filter: blur(10px) brightness(0.8);
-  }
-
-  .shimmer-gradient {
-    background: linear-gradient(
-      90deg,
-      #ffffff 0%,
-      #f5f5f5 25%,
-      #ffffff 50%,
-      #f5f5f5 75%,
-      #ffffff 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
-  }
-
-  .loading-placeholder {
-    background: linear-gradient(
-      90deg,
-      #ffffff 0%,
-      #f5f5f5 25%,
-      #ffffff 50%,
-      #f5f5f5 75%,
-      #ffffff 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
-  }
-
-  img.opacity-0 {
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-  }
-
-  img.opacity-100 {
-    opacity: 1;
-    transition: opacity 0.3s ease-in-out;
   }
 </style>

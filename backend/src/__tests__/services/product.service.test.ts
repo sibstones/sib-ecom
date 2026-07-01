@@ -188,6 +188,108 @@ describe('ProductService', () => {
       expect(foundProduct1).toBeDefined();
     });
 
+    it('should filter storefront products by inventory status', async () => {
+      const secondWarehouse = await TestHelpers.createWarehouse({ name: 'Second Warehouse' });
+      const inSaleProduct = await TestHelpers.createProduct({
+        name: 'In Sale Product',
+        slug: 'in-sale-product',
+        sku: 'IN-SALE-001',
+        price: 100,
+        categoryId: category.id,
+      });
+      const comingSoonProduct = await TestHelpers.createProduct({
+        name: 'Coming Soon Product',
+        slug: 'coming-soon-product',
+        sku: 'COMING-SOON-001',
+        price: 100,
+        categoryId: category.id,
+      });
+      const mixedProduct = await TestHelpers.createProduct({
+        name: 'Mixed Product',
+        slug: 'mixed-product',
+        sku: 'MIXED-001',
+        price: 100,
+        categoryId: category.id,
+      });
+      const outOfStockProduct = await TestHelpers.createProduct({
+        name: 'Out Of Stock Product',
+        slug: 'out-of-stock-product',
+        sku: 'OUT-OF-STOCK-001',
+        price: 100,
+        categoryId: category.id,
+      });
+      const awaitingProduct = await TestHelpers.createProduct({
+        name: 'Awaiting Product',
+        slug: 'awaiting-product',
+        sku: 'AWAITING-001',
+        price: 100,
+        categoryId: category.id,
+      });
+
+      await TestHelpers.createInventory({
+        warehouseId: warehouse.id,
+        productId: inSaleProduct.id,
+        quantity: 10,
+        status: 'IN_SALE',
+      });
+      await TestHelpers.createInventory({
+        warehouseId: warehouse.id,
+        productId: comingSoonProduct.id,
+        quantity: 10,
+        status: 'COMING_SOON',
+      });
+      await TestHelpers.createInventory({
+        warehouseId: warehouse.id,
+        productId: mixedProduct.id,
+        quantity: 10,
+        status: 'IN_SALE',
+      });
+      await TestHelpers.createInventory({
+        warehouseId: secondWarehouse.id,
+        productId: mixedProduct.id,
+        quantity: 10,
+        status: 'COMING_SOON',
+      });
+      await TestHelpers.createInventory({
+        warehouseId: warehouse.id,
+        productId: outOfStockProduct.id,
+        quantity: 0,
+        status: 'OUT_OF_STOCK',
+      });
+      await TestHelpers.createInventory({
+        warehouseId: warehouse.id,
+        productId: awaitingProduct.id,
+        quantity: 10,
+        status: 'AWAITING_RECEIPT',
+      });
+
+      const allStatuses = await productService.getAll(1, 20);
+      expect(allStatuses.products.map((product) => product.id)).toEqual(
+        expect.arrayContaining([
+          inSaleProduct.id,
+          comingSoonProduct.id,
+          mixedProduct.id,
+          outOfStockProduct.id,
+        ])
+      );
+      expect(allStatuses.products.find((product) => product.id === awaitingProduct.id)).toBeUndefined();
+
+      const inSale = await productService.getAll(1, 20, { inventoryStatus: 'IN_SALE' });
+      expect(inSale.products.map((product) => product.id)).toEqual(
+        expect.arrayContaining([inSaleProduct.id, mixedProduct.id])
+      );
+      expect(inSale.products.find((product) => product.id === comingSoonProduct.id)).toBeUndefined();
+
+      const comingSoon = await productService.getAll(1, 20, { inventoryStatus: 'COMING_SOON' });
+      expect(comingSoon.products.map((product) => product.id)).toEqual(
+        expect.arrayContaining([comingSoonProduct.id, mixedProduct.id])
+      );
+      expect(comingSoon.products.find((product) => product.id === inSaleProduct.id)).toBeUndefined();
+
+      const outOfStock = await productService.getAll(1, 20, { inventoryStatus: 'OUT_OF_STOCK' });
+      expect(outOfStock.products.map((product) => product.id)).toEqual([outOfStockProduct.id]);
+    });
+
     it('should sort products by price ascending', async () => {
       await TestHelpers.createProduct({
         name: 'Product 1',

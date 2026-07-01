@@ -97,7 +97,7 @@ app.use(
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
+        mediaSrc: ["'self'", 'https:'],
         frameSrc: ["'none'"],
       },
     },
@@ -198,6 +198,10 @@ app.post(
 // Body parsing middleware (after webhook routes)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Public storefront media proxy (same-origin for browsers; streams from S3/MinIO internally)
+import mediaRoutes from './routes/media.routes';
+app.use('/api/media', mediaRoutes);
 
 // CSRF verification for state-changing API requests (skips GET/HEAD/OPTIONS and /webhook)
 import { verifyCsrfToken } from './middleware/csrf.middleware';

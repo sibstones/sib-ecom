@@ -1,4 +1,5 @@
 import * as Minio from 'minio';
+import { Readable } from 'stream';
 import { config } from '../config/env';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
@@ -12,6 +13,20 @@ class StorageService {
   private readonly ensureBucketRetryDelayMs = 3000;
   private readonly ensureBucketMaxAttempts = 20;
   private static readonly PRIVATE_REF_PREFIX = 'private:';
+
+  private getPublicReadPolicy(bucketName: string): string {
+    return JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${bucketName}/*`],
+        },
+      ],
+    });
+  }
 
   constructor() {
     this.minioClient = new Minio.Client({
@@ -48,24 +63,14 @@ class StorageService {
         const exists = await this.minioClient.bucketExists(this.bucketName);
         if (!exists) {
           await this.minioClient.makeBucket(this.bucketName, config.minio.region);
-          // Set bucket policy to allow public read access
-          const policy = {
-            Version: '2012-10-17',
-            Statement: [
-              {
-                Effect: 'Allow',
-                Principal: { AWS: ['*'] },
-                Action: ['s3:GetObject'],
-                Resource: [`arn:aws:s3:::${this.bucketName}/*`],
-              },
-            ],
-          };
-          await this.minioClient.setBucketPolicy(
-            this.bucketName,
-            JSON.stringify(policy)
-          );
           console.log(`✅ Created bucket: ${this.bucketName}`);
         }
+
+        // Re-apply the public policy on startup as a safety net.
+        await this.minioClient.setBucketPolicy(
+          this.bucketName,
+          this.getPublicReadPolicy(this.bucketName)
+        );
 
         const privateExists = await this.minioClient.bucketExists(this.privateBucketName);
         if (!privateExists) {
@@ -260,26 +265,173 @@ class StorageService {
     };
   }
 
-  /**
-   * Extract object name from public URL
-   * @param url - Public URL
-   * @returns Object name or null
-   */
+  getPublicObjectHttpUrl(objectKey: string): string {
+    return this.getPublicUrl(objectKey);
+  }
+
+  private async streamFromPublicHttpUrl(
+    url: string,
+    range?: { start: number; end: number }
+  ): Promise<{
+    stream: Readable;
+    contentType: string;
+    contentLength: number;
+    etag?: string;
+    totalSize: number;
+  } | null> {
+    try {
+      const headers: Record<string, string> = {};
+      if (range) {
+        headers.Range = `bytes=${range.start}-${range.end}`;
+      }
+
+      const response = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!response.ok && response.status !== 206) {
+        console.warn('[Storage] HTTP fetch failed:', url, response.status);
+        return null;
+      }
+
+      if (!response.body) {
+        return null;
+      }
+
+      const contentType = response.headers.get('content-type') ?? 'application/octet-stream';
+      const etag = response.headers.get('etag') ?? undefined;
+      const contentLengthHeader = response.headers.get('content-length');
+      const contentRange = response.headers.get('content-range');
+      let contentLength = contentLengthHeader ? Number.parseInt(contentLengthHeader, 10) : 0;
+      let totalSize = contentLength;
+
+      if (contentRange) {
+        const match = /\/(\d+)$/.exec(contentRange);
+        if (match) {
+          totalSize = Number.parseInt(match[1], 10);
+        }
+        if (range) {
+          contentLength = range.end - range.start + 1;
+        }
+      }
+
+      return {
+        stream: Readable.fromWeb(response.body as import('stream/web').ReadableStream),
+        contentType,
+        contentLength: Number.isFinite(contentLength) ? contentLength : 0,
+        etag,
+        totalSize: Number.isFinite(totalSize) ? totalSize : contentLength,
+      };
+    } catch (error) {
+      console.warn('[Storage] HTTP fetch error:', url, error);
+      return null;
+    }
+  }
+
+  async getPublicObjectStream(
+    objectKey: string
+  ): Promise<{
+    stream: Readable;
+    contentType: string;
+    contentLength: number;
+    etag?: string;
+  } | null> {
+    try {
+      await this.ensureBucketReady();
+
+      const stat = await this.minioClient.statObject(this.bucketName, objectKey);
+      const stream = await this.minioClient.getObject(this.bucketName, objectKey);
+      const meta = stat.metaData ?? {};
+      const contentType =
+        meta['content-type'] ??
+        meta['Content-Type'] ??
+        'application/octet-stream';
+
+      return {
+        stream,
+        contentType,
+        contentLength: stat.size,
+        etag: stat.etag,
+      };
+    } catch (error) {
+      console.warn('[Storage] MinIO getPublicObjectStream failed, trying HTTP:', objectKey, error);
+    }
+
+    const httpPayload = await this.streamFromPublicHttpUrl(this.getPublicObjectHttpUrl(objectKey));
+    if (!httpPayload) {
+      return null;
+    }
+
+    return {
+      stream: httpPayload.stream,
+      contentType: httpPayload.contentType,
+      contentLength: httpPayload.totalSize || httpPayload.contentLength,
+      etag: httpPayload.etag,
+    };
+  }
+
+  async getPublicObjectRange(
+    objectKey: string,
+    start: number,
+    end: number
+  ): Promise<{
+    stream: Readable;
+    contentType: string;
+    contentLength: number;
+  } | null> {
+    try {
+      await this.ensureBucketReady();
+
+      const stat = await this.minioClient.statObject(this.bucketName, objectKey);
+      const length = end - start + 1;
+      const stream = await this.minioClient.getPartialObject(
+        this.bucketName,
+        objectKey,
+        start,
+        length
+      );
+      const meta = stat.metaData ?? {};
+      const contentType =
+        meta['content-type'] ??
+        meta['Content-Type'] ??
+        'application/octet-stream';
+
+      return {
+        stream,
+        contentType,
+        contentLength: length,
+      };
+    } catch (error) {
+      console.warn('[Storage] MinIO getPublicObjectRange failed, trying HTTP:', objectKey, error);
+    }
+
+    const httpPayload = await this.streamFromPublicHttpUrl(
+      this.getPublicObjectHttpUrl(objectKey),
+      { start, end }
+    );
+    if (!httpPayload) {
+      return null;
+    }
+
+    return {
+      stream: httpPayload.stream,
+      contentType: httpPayload.contentType,
+      contentLength: httpPayload.contentLength,
+    };
+  }
+
   private extractObjectName(url: string): string | null {
     try {
-      // Handle different URL formats
-      // Format: http://localhost:9000/bucket-name/folder/file.jpg
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
-      
-      // Remove bucket name from path (some public URLs already include the bucket path).
+
       while (pathParts[0] === this.bucketName) {
         pathParts.shift();
       }
-      
+
       return pathParts.join('/') || null;
-    } catch (error) {
-      // If URL parsing fails, assume it's already an object name
+    } catch {
       return url;
     }
   }
